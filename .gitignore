@@ -1,0 +1,14 @@
+# Ignoring raw data and large local folders
+../data/
+data/
+*.zip
+*.npy
+*.npz
+
+# Ignore runtime and system files
+__pycache__/
+.ipynb_checkpoints/
+.DS_Store
+
+# Ignore large outputs
+outputs/errors/*.log
