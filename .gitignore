@@ -1,0 +1,9 @@
+# Local data and outputs
+data/
+outputs/
+
+# Python specific
+__pycache__/
+*.pyc
+venv/
+.env
