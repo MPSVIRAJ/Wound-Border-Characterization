@@ -1,3 +1,8 @@
+# Operating System files
+.DS_Store
+Thumbs.db
+
+
 # Local data and outputs
 data/
 outputs/
