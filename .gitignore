@@ -1,14 +1,23 @@
-# Operating System files
-.DS_Store
-Thumbs.db
+# Python Virtual Environments
+venv/
 
+# Python Cache
+__pycache__/
+*.pyc
 
-# Local data and outputs
+# Large Data and Generated Outputs
 data/
 outputs/
 
-# Python specific
-__pycache__/
-*.pyc
-venv/
-.env
+# OS-specific files (macOS)
+.DS_Store
+
+# IDE-specific files (VS Code)
+.vscode/
+*.code-workspace
+
+# Python build artifacts and distribution files (NEW)
+build/
+dist/
+*.egg-info/
+*.egg
