@@ -2,7 +2,54 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit    
 from scipy.stats import skew, kurtosis
-# visualize rectified depth strip of 
+
+# Plot initial data
+def plot_initial_data(image, wound_mask, body_mask, depth_map):
+    """
+    Visualizes the raw input data: the RGB image with contours and the depth map.
+    """
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+    
+    ax1.imshow(image)
+    ax1.grid(False)
+    if wound_mask is not None:
+        ax1.contour(wound_mask, colors='red', linewidths=2, levels=[0.5])
+    if body_mask is not None:
+        ax1.contour(body_mask, colors='blue', linewidths=1, levels=[0.5])
+    ax1.set_title("RGB Image with Wound and Body Masks")
+    ax1.set_xticks([])
+    ax1.set_yticks([])
+
+    ax2.imshow(np.where(depth_map > 0, depth_map, np.nan), cmap='plasma_r')
+    ax2.set_title("Depth Map with Body Mask Applied")
+    ax2.grid(False)
+    ax2.set_xticks([])
+    ax2.set_yticks([])
+    
+    plt.tight_layout()
+    plt.show()
+
+# Visualize rectified depth strip of 
+def show_unrolled_strip(rect_depth, unrolled_image, d1, p1, iterations):
+    """    
+    Visualizes the unrolled depth map and RGB image with 
+    a horizontal line at the wound border position.
+    """
+    rect_depth = rect_depth.transpose(1, 0)
+    unroled_image = unrolled_image.transpose(1, 0, 2)
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(20, iterations/20))
+    ax1.imshow(rect_depth, cmap='plasma_r')
+    ax1.axhline(d1, linestyle='dashed', color='w', linewidth=2)
+    ax1.set_title("Unrolled Depth Map")
+
+    ax2.imshow(unroled_image)
+    ax2.axhline(p1, linestyle='dashed', color='w', linewidth=2)
+    ax2.set_title("Unrolled RGB Image")
+    ax1.grid(False)  # <--- Explicitly turn off grid
+    ax2.grid(False)  # <--- Explicitly turn off grid    
+
+
 # Visualize the mean depth profile with its standard deviation
 def plot_depth_profile(mean_profile, std_profile, d1):
     """
