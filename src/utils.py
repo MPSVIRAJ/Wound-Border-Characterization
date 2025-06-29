@@ -1,8 +1,8 @@
 import pandas as pd
 from pathlib import Path
-import os # We'll use os to check if the file exists
+import os 
 
-def save_features_to_csv(features_dict: dict, output_filepath: str):
+def save_features_to_csv(ImageID: str, features_dict: dict, output_filepath: str):
     """
     Appends a dictionary of features for a single image to a CSV file,
     ensuring the 'id' column is first.
@@ -13,12 +13,9 @@ def save_features_to_csv(features_dict: dict, output_filepath: str):
     if not features_dict:
         print("Warning: Feature dictionary is empty. Nothing to save.")
         return
-        
-    if 'id' not in features_dict:
-        print("Warning: 'id' not found in features dictionary. Cannot save.")
-        return
+    # Add the ImageID to the features dictionary
+    features_dict['id'] = ImageID  
 
-    # --- New logic to control column order ---
     # Create the desired column order with 'id' first
     column_order = ['id'] + [key for key in features_dict if key != 'id']
     
