@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit    
 from scipy.stats import skew, kurtosis
-
+from feature_extraction import linear_func, sigmoid_func
 # Plot initial data
 def plot_initial_data(image, wound_mask, body_mask, depth_map):
     """
@@ -35,11 +35,11 @@ def show_unrolled_strip(rect_depth, unrolled_image, d1, p1, iterations):
     Visualizes the unrolled depth map and RGB image with 
     a horizontal line at the wound border position.
     """
-    rect_depth = rect_depth.transpose(1, 0)
+    rect_depth_for_plot = rect_depth.transpose(1, 0)
     unroled_image = unrolled_image.transpose(1, 0, 2)
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(20, iterations/20))
-    ax1.imshow(rect_depth, cmap='plasma_r')
+    ax1.imshow(rect_depth_for_plot, cmap='plasma_r')
     ax1.axhline(d1, linestyle='dashed', color='w', linewidth=2)
     ax1.set_title("Unrolled Depth Map")
 
