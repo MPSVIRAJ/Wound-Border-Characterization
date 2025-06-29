@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit    
 from scipy.stats import skew, kurtosis
 from feature_extraction import linear_func, sigmoid_func
+
 # Plot initial data
 def plot_initial_data(image, wound_mask, body_mask, depth_map):
     """
