@@ -54,7 +54,6 @@ def depth_corrction_for_body_curvature(wound, body, depth):
     return body_clensed, depth_clensed, depth_corrected
  
 #--- Peri-Wound Rectification ---
-
 def sample_pixels_from_contour(img, mask):
     # Getting the contours of the mask
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
@@ -121,5 +120,11 @@ def unroll_periwound_to_image(img, mask, iterations : int = 1):
     num_erostions = len(erosions)
     # Concatenating the dilations and erosions
     unrolled_image = np.hstack( erosions[::-1]+dilations)
+    
+    # Check the number of dimensions of the unrolled image and transpose accordingly
+    if unrolled_image.ndim == 3: # For a 3D RGB image
+        transposed_image = unrolled_image.transpose(1, 0, 2)
+    else: # For a 2D depth map
+        transposed_image = unrolled_image.transpose(1, 0)
 
-    return unrolled_image, (num_erostions, num_dilations)
+    return transposed_image, (num_erostions, num_dilations)
