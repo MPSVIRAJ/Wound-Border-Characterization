@@ -26,37 +26,6 @@ def calculate_depth_profiles(rect_depth):
     
     return mean_profile, std_profile
 
-def plot_depth_profile(mean_profile, std_profile, d1):
-    """
-    Visualizes the mean depth profile with its standard deviation and the
-    estimated wound border position.
-
-    Args:
-        mean_profile (np.array): 1D array of the mean depth profile.
-        std_profile (np.array): 1D array of the standard deviation profile.
-        d1 (int): The estimated position of the wound border to draw a line.
-    """
-    plt.figure(figsize=(15, 7))
-    
-    # Plot the mean profile line
-    plt.plot(mean_profile, color='blue', linewidth=1, alpha=0.9, label='Mean Profile')  
-
-    # Add the standard deviation as a shaded area
-    plt.fill_between(range(len(mean_profile)),
-                     mean_profile - std_profile,
-                     mean_profile + std_profile,
-                     color='lightblue', alpha=0.6, label='Standard Deviation')
-
-    # Add a vertical line for the wound border
-    plt.axvline(x=d1, color='red', linestyle='--', linewidth=2, label=f'Wound Border Position (d1={d1})')
-    
-    plt.title('Mean Depth Profile of Periwound Area', fontsize=16)
-    plt.xlabel('Profile Position (Wound Interior -> Surrounding Skin)', fontsize=12)
-    plt.ylabel('Mean Corrected Depth', fontsize=12)
-    plt.legend()
-    plt.grid(True, linestyle='--', alpha=0.6)
-    plt.show()
-
 
 #--- Fitting and feature extraction from the profiles ---
 
@@ -93,7 +62,7 @@ def get_spectral_features(profile_segment):
 
 # --- Main Feature Extraction Function ---
 
-def extract_features_from_profile(mean_profile, d1, transition_width=40):
+def extract_features_from_profile(mean_profile, d1, transition_width):
     """
     Takes a mean depth profile and extracts a comprehensive feature vector.
 
