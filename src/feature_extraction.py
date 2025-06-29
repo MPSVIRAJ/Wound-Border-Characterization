@@ -89,47 +89,68 @@ def extract_features_from_profile(mean_profile, d1, transition_width):
     x_skin, y_skin = np.arange(start_skin, len(mean_profile)), mean_profile[start_skin:]
 
     # --- 2. Perform Piecewise Fitting ---
-    try:
-        params, _ = curve_fit(linear_func, x_bed, y_bed)
-        features.update({'bed_slope': params[0], 
-                         'bed_intercept': params[1], 
-                         'bed_r2': r_squared(y_bed, linear_func(x_bed, *params)),
-                           'bed_fit_success': 1})
-    except (RuntimeError, TypeError):
+    # Fit the wound bed
+    if y_bed.size > 0:
+        try:
+            params, _ = curve_fit(linear_func, x_bed, y_bed)
+            features.update({'bed_slope': params[0], 
+                            'bed_intercept': params[1], 
+                            'bed_r2': r_squared(y_bed, linear_func(x_bed, *params)),
+                            'bed_fit_success': 1})
+        except (RuntimeError, TypeError):
+            features.update({'bed_slope': np.nan, 
+                            'bed_intercept': np.nan, 
+                            'bed_r2': np.nan, 
+                            'bed_fit_success': 0})
+    else:
         features.update({'bed_slope': np.nan, 
                          'bed_intercept': np.nan, 
                          'bed_r2': np.nan, 
                          'bed_fit_success': 0})
-
-    try:
-        p0 = [np.max(y_edge)-np.min(y_edge), 0.5, np.mean(x_edge), np.min(y_edge)]
-        params, _ = curve_fit(sigmoid_func, x_edge, y_edge, p0=p0, maxfev=10000)
-        features.update({'edge_amplitude': params[0], 
-                         'edge_steepness': params[1], 
-                         'edge_midpoint': params[2], 
-                         'edge_offset': params[3], 
-                         'edge_r2': r_squared(y_edge, sigmoid_func(x_edge, *params)), 
-                         'edge_fit_success': 1})
-    except (RuntimeError, TypeError):
+    # Fit the Transition Edge
+    if y_edge.size > 0:
+        try:
+            p0 = [np.max(y_edge)-np.min(y_edge), 0.5, np.mean(x_edge), np.min(y_edge)]
+            params, _ = curve_fit(sigmoid_func, x_edge, y_edge, p0=p0, maxfev=10000)
+            features.update({'edge_amplitude': params[0], 
+                            'edge_steepness': params[1], 
+                            'edge_midpoint': params[2], 
+                            'edge_offset': params[3], 
+                            'edge_r2': r_squared(y_edge, sigmoid_func(x_edge, *params)), 
+                            'edge_fit_success': 1})
+        except (RuntimeError, TypeError):
+            features.update({'edge_amplitude': np.nan, 
+                            'edge_steepness': np.nan, 
+                            'edge_midpoint': np.nan, 
+                            'edge_offset': np.nan, 
+                            'edge_r2': np.nan, 
+                            'edge_fit_success': 0})
+    else:
         features.update({'edge_amplitude': np.nan, 
                          'edge_steepness': np.nan, 
                          'edge_midpoint': np.nan, 
                          'edge_offset': np.nan, 
                          'edge_r2': np.nan, 
                          'edge_fit_success': 0})
-
-    try:
-        params, _ = curve_fit(linear_func, x_skin, y_skin)
-        features.update({'skin_slope': params[0], 
-                         'skin_intercept': params[1], 
-                         'skin_r2': r_squared(y_skin, linear_func(x_skin, *params)), 
-                         'skin_fit_success': 1})
-    except (RuntimeError, TypeError):
+    # Fit the healthy skin
+    if y_skin.size > 0:
+        try:
+            params, _ = curve_fit(linear_func, x_skin, y_skin)
+            features.update({'skin_slope': params[0], 
+                            'skin_intercept': params[1], 
+                            'skin_r2': r_squared(y_skin, linear_func(x_skin, *params)), 
+                            'skin_fit_success': 1})
+        except (RuntimeError, TypeError):
+            features.update({'skin_slope': np.nan, 
+                            'skin_intercept': np.nan, 
+                            'skin_r2': np.nan, 
+                            'skin_fit_success': 0})
+    else:
         features.update({'skin_slope': np.nan, 
                          'skin_intercept': np.nan, 
                          'skin_r2': np.nan, 
                          'skin_fit_success': 0})
-
+    
     # --- 3. Extract Statistical and Spectral Features ---
     if len(y_bed) > 0: features.update({'bed_mean': np.mean(y_bed), 
                                         'bed_std': np.std(y_bed), 
