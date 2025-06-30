@@ -14,10 +14,10 @@ def save_features_to_csv(ImageID: str, features_dict: dict, output_filepath: str
         print("Warning: Feature dictionary is empty. Nothing to save.")
         return
     # Add the ImageID to the features dictionary
-    features_dict['id'] = ImageID  
+    features_dict['image_id'] = ImageID  
 
     # Create the desired column order with 'id' first
-    column_order = ['id'] + [key for key in features_dict if key != 'id']
+    column_order = ['image_id'] + [key for key in features_dict if key != 'image_id']
     
     # Create the DataFrame with the specified column order
     features_df = pd.DataFrame([features_dict], columns=column_order)
