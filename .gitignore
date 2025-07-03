@@ -8,6 +8,7 @@ __pycache__/
 # Large Data and Generated Outputs
 data/
 outputs/
+report/
 
 # OS-specific files (macOS)
 .DS_Store
