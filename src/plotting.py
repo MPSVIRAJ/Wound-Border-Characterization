@@ -78,16 +78,27 @@ def plot_depth_profile(mean_profile, std_profile, d1):
 
 
 # Visualizing feature fits on the mean depth profile
-def plot_feature_fits(mean_profile, d1, features, transition_width=40):
+def plot_profiles_and_fits(mean_profile, std_profile, smoothed_profile, features, d1, p1, transition_width):
     """
-    Visualizes the piecewise fits on top of the mean depth profile.
-    This function is for use in exploratory notebooks.
+    Plots the mean and std deviation profiles, the smoothed profile, and the curve fits.
     """
-    plt.figure(figsize=(16, 8))
-    plt.plot(mean_profile, 'o', color='gray', alpha=0.4, markersize=4, label='Smoothed Profile Data')
+    plt.figure(figsize=(15, 7))
+    
+    x = np.arange(len(mean_profile))
+    
+    # Plot the original mean profile (noisy)
+    plt.plot(x, mean_profile, color='gray', alpha=0.5, label='Original Mean Profile')
+    
+    # Plot the smoothed profile
+    plt.plot(x, smoothed_profile, color='black', linewidth=2, label='Smoothed Mean Profile (Butterworth)')
+    
+    # Plot the standard deviation as a shaded area around the smoothed profile
+    plt.fill_between(x, smoothed_profile - std_profile, smoothed_profile + std_profile, color='gray', alpha=0.2, label='Standard Deviation')
 
-    # Define regions again for plotting
-    end_bed = max(0, d1 - transition_width // 2)
+    plt.axvline(x=d1, color='red', linestyle='--', linewidth=2, label=f'Wound Edge (d1={d1})')
+
+    # Define regions for plotting fits
+    end_bed = d1 - transition_width // 2
     x_bed = np.arange(0, end_bed)
     start_edge = end_bed
     end_edge = min(len(mean_profile), d1 + transition_width // 2)
@@ -108,10 +119,9 @@ def plot_feature_fits(mean_profile, d1, features, transition_width=40):
         params_skin = [features['skin_slope'], features['skin_intercept']]
         plt.plot(x_skin, linear_func(x_skin, *params_skin), color='purple', linewidth=3, label=f"Healthy Skin Fit (R²={features.get('skin_r2', 0):.2f})")
 
-    plt.axvline(x=d1, color='red', linestyle='--', linewidth=2, label='Wound Border Position')
-    plt.title('Piecewise Mathematical Fit of Depth Profile', fontsize=16)
-    plt.xlabel('Profile Position (Wound Interior -> Surrounding Skin)', fontsize=12)
-    plt.ylabel('Mean Corrected Depth', fontsize=12)
+    plt.title('Mean Depth Profile with Curve Fits')
+    plt.xlabel('Distance from Wound Center (pixels)')
+    plt.ylabel('Mean Depth')
     plt.legend()
-    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.grid(True)
     plt.show()
