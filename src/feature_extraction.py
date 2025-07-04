@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pylab as plt
 from scipy.optimize import curve_fit
 from scipy.stats import skew, kurtosis
+from scipy.signal import butter, filtfilt 
 import cv2
 
 #---Getting the profiles from the rectified depth map---
@@ -60,6 +61,20 @@ def get_spectral_features(profile_segment):
     
     return {'spectral_centroid': centroid, 'spectral_entropy': entropy}
 
+# ---Filtering with a butterworth filter
+def butter_lowpass_filter(data, cutoff, fs, order=4):
+    """
+    Applies a Butterworth low-pass filter to a 1D signal.
+    """
+    nyq = 0.5 * fs  # Nyquist Frequency
+    normal_cutoff = cutoff / nyq
+    # Step 1: Design the filter to get coefficients b and a
+    b, a = butter(order, normal_cutoff, btype='low', analog=False)
+    # Step 2: Apply the filter using those coefficients
+    y = filtfilt(b, a, data)
+    return y
+
+
 # --- Main Feature Extraction Function ---
 
 def extract_features_from_profile(mean_profile, d1, transition_width):
@@ -75,18 +90,28 @@ def extract_features_from_profile(mean_profile, d1, transition_width):
         dict: A dictionary containing all extracted features.
     """
     features = {}
+    # --- 1. Smooth mean profile removing high frequency components
+    if len(mean_profile) > 10: # Filter requires a minimum data length
+        fs = len(mean_profile)  # Sampling frequency is the number of points
+        cutoff = 0.1 * fs # Cutoff frequency (as a fraction of sampling freq)
+        order = 4
+        # Create a smoothed profile for curve fitting
+        smoothed_profile = butter_lowpass_filter(mean_profile, cutoff, fs, order)
+    else:
+        # If the profile is too short, just use the original
+        smoothed_profile = mean_profile
 
     # --- 1. Divide the profile into three regions ---
     # wound bed
     end_bed = max(0, d1 - transition_width // 2)
-    x_bed, y_bed = np.arange(0, end_bed), mean_profile[0:end_bed]
+    x_bed, y_bed = np.arange(0, end_bed), smoothed_profile[0:end_bed]
     # edge
     start_edge = end_bed
-    end_edge = min(len(mean_profile), d1 + transition_width // 2)
-    x_edge, y_edge = np.arange(start_edge, end_edge), mean_profile[start_edge:end_edge]
+    end_edge = min(len(smoothed_profile), d1 + transition_width // 2)
+    x_edge, y_edge = np.arange(start_edge, end_edge), smoothed_profile[start_edge:end_edge]
     # healthy skin
     start_skin = end_edge
-    x_skin, y_skin = np.arange(start_skin, len(mean_profile)), mean_profile[start_skin:]
+    x_skin, y_skin = np.arange(start_skin, len(smoothed_profile)), smoothed_profile[start_skin:]
 
     # --- 2. Perform Piecewise Fitting ---
     # Fit the wound bed
@@ -152,18 +177,21 @@ def extract_features_from_profile(mean_profile, d1, transition_width):
                          'skin_fit_success': 0})
     
     # --- 3. Extract Statistical and Spectral Features ---
-    if len(y_bed) > 0: features.update({'bed_mean': np.mean(y_bed), 
-                                        'bed_std': np.std(y_bed), 
-                                        'bed_skew': skew(y_bed), 
-                                        'bed_kurtosis': kurtosis(y_bed)})
-    if len(y_edge) > 0: features.update({'edge_mean': np.mean(y_edge), 
-                                         'edge_std': np.std(y_edge), 
-                                         'edge_skew': skew(y_edge), 
-                                         'edge_kurtosis': kurtosis(y_edge)})
-    if len(y_skin) > 0: features.update({'skin_mean': np.mean(y_skin), 
-                                         'skin_std': np.std(y_skin), 
-                                         'skin_skew': skew(y_skin), 
-                                         'skin_kurtosis': kurtosis(y_skin)})
-    if len(y_edge) > 0: features.update(get_spectral_features(y_edge))
+    y_bed_orig = mean_profile[0:end_bed]
+    y_edge_orig = mean_profile[start_edge:end_edge]
+    y_skin_orig = mean_profile[start_skin:]
+    if len(y_bed_orig) > 0: features.update({'bed_mean': np.mean(y_bed_orig), 
+                                        'bed_std': np.std(y_bed_orig), 
+                                        'bed_skew': skew(y_bed_orig), 
+                                        'bed_kurtosis': kurtosis(y_bed_orig)})
+    if len(y_edge_orig) > 0: features.update({'edge_mean': np.mean(y_edge_orig), 
+                                         'edge_std': np.std(y_edge_orig), 
+                                         'edge_skew': skew(y_edge_orig), 
+                                         'edge_kurtosis': kurtosis(y_edge_orig)})
+    if len(y_skin_orig) > 0: features.update({'skin_mean': np.mean(y_skin_orig), 
+                                         'skin_std': np.std(y_skin_orig), 
+                                         'skin_skew': skew(y_skin_orig), 
+                                         'skin_kurtosis': kurtosis(y_skin_orig)})
+    if len(mean_profile) > 0: features.update(get_spectral_features(mean_profile))
     
-    return features
+    return features, smoothed_profile
