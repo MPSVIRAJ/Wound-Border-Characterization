@@ -78,7 +78,7 @@ def main(args):
                 continue
 
             # --- Feature Extraction ---
-            features = extract_features_from_profile(mean_profile, d1, transition_width=args.transision_width)
+            features, _ = extract_features_from_profile(mean_profile, d1, transition_width=args.transision_width)
             
             # --- Save Results for This Image ---
             save_features_to_csv(image_id, features, output_filepath)
@@ -102,7 +102,7 @@ if __name__ == '__main__':
     parser.add_argument('--data_path', type=str, default='./data', 
                         help='Path to the root data folder.')
     
-    parser.add_argument('--manifest_path', type=str, default='./metadata/image_index.csv', 
+    parser.add_argument('--manifest_path', type=str, default='./metadata/image_index_filtered.csv', 
                         help='Path to the CSV file containing ImageIDs.')
                         
     parser.add_argument('--output_filepath', type=str, default='./outputs/comprehensive_features.csv', 
