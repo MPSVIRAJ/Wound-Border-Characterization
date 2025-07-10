@@ -78,7 +78,7 @@ def plot_depth_profile(mean_profile, std_profile, d1):
 
 
 # Visualizing feature fits on the mean depth profile
-def plot_profiles_and_fits(mean_profile, std_profile, smoothed_profile, features, d1, p1, transition_width):
+def plot_profiles_and_fits(mean_profile, std_profile, smoothed_profile, features, d1, p1, transition_width, save):
     """
     Plots the mean and std deviation profiles, the smoothed profile, and the curve fits.
     """
@@ -87,15 +87,22 @@ def plot_profiles_and_fits(mean_profile, std_profile, smoothed_profile, features
     x = np.arange(len(mean_profile))
     
     # Plot the original mean profile (noisy)
-    plt.plot(x, mean_profile, color='gray', alpha=0.5, label='Original Mean Profile')
+    #plt.plot(x, mean_profile,'o', color='lightgreen', alpha=0.5, label='Original Mean Profile')
     
     # Plot the smoothed profile
-    plt.plot(x, smoothed_profile, color='black', linewidth=2, label='Smoothed Mean Profile (Butterworth)')
+    plt.plot(x, smoothed_profile, color='gray', 
+             linewidth=2, 
+             label='Smoothed Mean Profile')
     
     # Plot the standard deviation as a shaded area around the smoothed profile
-    plt.fill_between(x, smoothed_profile - std_profile, smoothed_profile + std_profile, color='gray', alpha=0.2, label='Standard Deviation')
+    plt.fill_between(x, smoothed_profile - std_profile, 
+                     smoothed_profile + std_profile, 
+                     color='lightblue', alpha=0.5, 
+                     label='Standard Deviation')
 
-    plt.axvline(x=d1, color='red', linestyle='--', linewidth=2, label=f'Wound Edge (d1={d1})')
+    plt.axvline(x=d1, color='red', 
+                linestyle='--', linewidth=2, 
+                label=f'Wound Edge (baseline contour)')
 
     # Define regions for plotting fits
     end_bed = d1 - transition_width // 2
@@ -109,19 +116,30 @@ def plot_profiles_and_fits(mean_profile, std_profile, smoothed_profile, features
     # Plot fits if they were successful
     if features.get('bed_fit_success'):
         params_bed = [features['bed_slope'], features['bed_intercept']]
-        plt.plot(x_bed, linear_func(x_bed, *params_bed), color='blue', linewidth=3, label=f"Wound Bed Fit (R²={features.get('bed_r2', 0):.2f})")
+        plt.plot(x_bed, linear_func(x_bed, *params_bed), color='blue', 
+                 linewidth=3, label="Wound Bed Fit")
 
     if features.get('edge_fit_success'):
         params_edge = [features['edge_amplitude'], features['edge_steepness'], features['edge_midpoint'], features['edge_offset']]
-        plt.plot(x_edge, sigmoid_func(x_edge, *params_edge), color='green', linewidth=3, label=f"Edge Sigmoid Fit (R²={features.get('edge_r2', 0):.2f})")
+        plt.plot(x_edge, sigmoid_func(x_edge, *params_edge), 
+                 color='green', linewidth=3, 
+                 label="Edge Sigmoid Fit")
 
     if features.get('skin_fit_success'):
         params_skin = [features['skin_slope'], features['skin_intercept']]
-        plt.plot(x_skin, linear_func(x_skin, *params_skin), color='purple', linewidth=3, label=f"Healthy Skin Fit (R²={features.get('skin_r2', 0):.2f})")
+        plt.plot(x_skin, linear_func(x_skin, *params_skin), 
+                 color='purple', linewidth=3, 
+                 label="Healthy Skin Fit")
 
-    plt.title('Mean Depth Profile with Curve Fits')
-    plt.xlabel('Distance from Wound Center (pixels)')
-    plt.ylabel('Mean Depth')
-    plt.legend()
-    plt.grid(True)
+    plt.title('Mean Depth Profile with Piecewise Curve Fitting',fontsize=16)
+    plt.xlabel('Width of the rectified strip',fontsize=14)
+    plt.ylabel('Mean depth',fontsize=14)
+    plt.legend(fontsize=12)
+    plt.grid(False)
+    plt.xlim(20, 170)
     plt.show()
+    if save:
+        plt.savefig(
+            '../report/fig/mean_depth_cf.png',
+            dpi=300,
+            bbox_inches='tight' ) 
