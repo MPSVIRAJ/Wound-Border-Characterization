@@ -1,0 +1,23 @@
+# Core Data Science/ML Libraries
+numpy==2.2.6
+pandas==2.2.2
+scikit-image==0.25.2
+scikit-learn==1.6.1
+scipy==1.15.2
+pacmap==0.8.0
+hdbscan==0.8.40
+
+# Plotting and Visualization
+matplotlib==3.10.3
+seaborn==0.13.2
+
+# Progress bars
+tqdm==4.67.1
+
+# Image related dependencies
+imageio==2.38.0
+pillow==10.3.0
+opencv-python==4.11.0
+
+# For running Jupyter Notebooks
+jupyterlab
