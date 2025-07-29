@@ -1,5 +1,5 @@
 # Core Data Science/ML Libraries
-numpy==2.2.6
+numpy==1.26.4
 pandas==2.2.2
 scikit-image==0.25.2
 scikit-learn==1.6.1
@@ -15,9 +15,12 @@ seaborn==0.13.2
 tqdm==4.67.1
 
 # Image related dependencies
-imageio==2.38.0
+imageio
 pillow==10.3.0
-opencv-python==4.11.0
+opencv-python
 
 # For running Jupyter Notebooks
 jupyterlab
+
+#for testing
+pytest==8.4.0
