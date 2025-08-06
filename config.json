@@ -4,9 +4,18 @@
     "metadata_path": "./metadata",
     "output_path": "./outputs",
     "image_manifest_filtered_filename": "image_index_filtered.csv",
-    "comprehensive_features_filename": "comprehensive_features.csv",
-    "image_cluster_map_filename": "image_cluster_map.csv",      
-    "features_with_labels_filename": "features_with_labels.csv"
+    "comprehensive_features_filename": "1_comprehensive_features.csv",
+    "image_cluster_map_filename": "2_image_cluster_map.csv",      
+    "cluster_summary_filename": "3_cluster_summary.csv",
+    "cluster_profile_filename": "4_cluster_profiles.csv",
+    "features_with_labels_filename": "5_features_with_labels.csv",
+    "pacmap_graph_filename": "6_PACMAP_graph.png",
+    "hdbscan_graph_filename": "7_HDBSCAN_cluster_graph.png",
+    "claster_sample_filename": "8_samples_for_clusters.png",
+    "feature_distribution_plot_filename": "9_feature_distribution_boxplot.png",
+    "confution_matrix_plot_filename": "10_confusion_matrix.png",
+    "feature_importance_filename": "11_feature_importance.png",
+    "random_forest_model_filename": "random_forest_model.joblib"
   },
   "subdirs": {
     "wound_masks_subdir": "wound_masks",
@@ -21,15 +30,29 @@
   },
   "FeatureExtraction": {
     "unroll_iterations": 100,
+    "cutoff_freq": 0.1,
+    "butter_order": 4,
     "transition_width": 50
+  },
+  "DescriptiveLabels": {
+    "-1": "Outlier",
+    "0": "Flat Edge, Raised Bed",
+    "1": "Gentle Slope Edge, Shallow Bed",
+    "2": "Flat Edge, Superficial bed",
+    "3": "Sloping Edge, Moderately Deep bed",
+    "4": "Elevated Bed",
+    "5": "Superficial Sharp and Uneven Edge",
+    "6": "Sharp and Textured Edge, Shallow bed"
   },
   "Clustering": {
     "pacmap_n_components": 2,
     "pacmap_mn_ratio": 2,
     "pacmap_fp_ratio": 8,
+    "random_state": 42,
     "hdbscan_min_cluster_size": 25,
     "hdbscan_min_samples": 6,
-    "hdbscan_epsilon": 0.75
+    "hdbscan_epsilon": 0.75,
+    "metric": "euclidean"
   },
   "Classification": {
     "test_size": 0.2,
