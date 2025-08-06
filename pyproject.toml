@@ -4,3 +4,14 @@ version = "0.1.0"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+log_cli = true # Show log messages in terminal during test run
+log_cli_level = "INFO" # Capture logs at INFO level and above
+log_cli_format = "%(levelname)s %(message)s" # Simple format for easy checking
+log_file = "pytest_logs.log" # (Optional) Write logs to a file too
+log_file_level = "DEBUG" # Capture more detailed logs to file
+log_file_format = "%(asctime)s %(levelname)s %(message)s"
+
+pythonpath = ["."] # Add the current directory (project root) to Python's search path
+testpaths = ["tests"] # Explicitly tell pytest to only look for tests in the 'tests' directory
