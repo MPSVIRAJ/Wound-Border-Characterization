@@ -1,5 +1,5 @@
 # Core depandancies for the depth map based wound boder characterization project
-#core ML / Data Science Libraries
+# Core ML / Data Science Libraries
 numpy=2.2.6
 pandas=2.2.3
 scikit-learn=1.6.1
@@ -9,16 +9,17 @@ pacmap==0.8.0
 hdbscan==0.8.40
 joblib==1.5.0
 
-#Plotting and Visualization
+# Plotting and Visualization
 matplotlib=3.10.3
 seaborn=0.13.2
 
-#Progress bars
+# Utilities
 tqdm==4.67.1
 
-#Image related dependancies
+# Image Processing
 opencv-python=4.11.0
 pillow=11.2.1
 
-#for Testing 
+# --- Development & Testing Dependencies ---
+# These packages are only required to run the test suite
 pytest==8.4.1
