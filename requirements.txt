@@ -1,26 +1,24 @@
-# Core Data Science/ML Libraries
-numpy==1.26.4
-pandas==2.2.2
-scikit-image==0.25.2
-scikit-learn==1.6.1
-scipy==1.15.2
+# Core depandancies for the depth map based wound boder characterization project
+#core ML / Data Science Libraries
+numpy=2.2.6
+pandas=2.2.3
+scikit-learn=1.6.1
+scikit-image=0.25.2
+scipy=1.15.2
 pacmap==0.8.0
 hdbscan==0.8.40
+joblib==1.5.0
 
-# Plotting and Visualization
-matplotlib==3.10.3
-seaborn==0.13.2
+#Plotting and Visualization
+matplotlib=3.10.3
+seaborn=0.13.2
 
-# Progress bars
+#Progress bars
 tqdm==4.67.1
 
-# Image related dependencies
-imageio
-pillow==10.3.0
-opencv-python
+#Image related dependancies
+opencv-python=4.11.0
+pillow=11.2.1
 
-# For running Jupyter Notebooks
-jupyterlab
-
-#for testing
-pytest==8.4.0
+#for Testing 
+pytest==8.4.1
