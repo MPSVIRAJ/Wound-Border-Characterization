@@ -44,6 +44,7 @@ def temp_output_dir(tmp_path: Path) -> Path:
     output_dir.mkdir()
     return output_dir
 
+
 # --- Fixture for setting up basic logging (needed for tests using caplog) ---
 @pytest.fixture(autouse=True)
 def setup_test_logging(caplog):
@@ -476,3 +477,85 @@ def test_generate_cluster_profiles_no_numeric_features(temp_output_dir: Path, ca
     assert "No numeric feature columns found to generate cluster profiles. Returning empty DataFrame." in caplog.text
     caplog.clear() 
     assert f"DataFrame successfully saved to {output_file}" not in caplog.text
+
+
+def test_save_dataframe_to_csv_io_error(temp_output_dir, caplog, monkeypatch):
+    """
+    GIVEN: A scenario where writing to a file fails.
+    WHEN:  save_dataframe_to_csv is called.
+    THEN:  It should log an error and not crash.
+    """
+    df_data = pd.DataFrame({'col1': [1]})
+    output_file = temp_output_dir / "no_permission.csv"
+
+    def mock_to_csv(*args, **kwargs):
+        raise OSError("Permission denied: Mock error for testing IOError")
+
+    monkeypatch.setattr(pd.DataFrame, 'to_csv', mock_to_csv)
+
+    with pytest.raises(IOError) as excinfo:
+        save_dataframe_to_csv(df_data, output_file)
+    
+    assert "Error saving DataFrame to" in str(excinfo.value)
+    assert "Permission denied" in str(excinfo.value)
+    assert "ERROR" in caplog.text
+    assert "Failed to save DataFrame" in caplog.text
+
+
+def test_save_cluster_assignments_key_error(temp_output_dir, caplog):
+    """
+    GIVEN: A DataFrame missing the 'cluster_label' column.
+    WHEN:  save_cluster_assignments is called.
+    THEN:  It should raise a ValueError and log an error.
+    """
+
+    df_missing_col = pd.DataFrame({'image_id': ['img1', 'img2']})
+    filepath = temp_output_dir / "assignments.csv"
+    with pytest.raises(ValueError):
+        save_cluster_assignments(df_missing_col, filepath)
+    assert "DataFrame must contain 'image_id' and 'cluster_label' columns" in caplog.text
+
+
+def test_save_cluster_assignments_empty_df(temp_output_dir):
+    """
+    GIVEN: An empty DataFrame.
+    WHEN:  save_cluster_assignments is called.
+    THEN:  It should return an empty dictionary and save a file with only headers.
+    """
+    df_empty = pd.DataFrame({'image_id': [], 'cluster_label': []})
+    filepath = temp_output_dir / "empty_assignments.csv"
+
+    counts = save_cluster_assignments(df_empty, filepath)
+    # Assert that the returned counts dictionary is empty
+    assert counts == {}
+    # Verify that the file was created correctly
+    assert filepath.exists()
+    saved_content = pd.read_csv(filepath)
+    assert saved_content.empty
+    assert list(saved_content.columns) == ['image_id', 'cluster_label']
+
+
+def test_generate_cluster_summary_empty_df(temp_output_dir, caplog):
+    """
+    GIVEN: An empty DataFrame.
+    WHEN:  generate_cluster_summary is called.
+    THEN:  It should return an empty DataFrame and log the correct warning.
+    """
+    df_empty = pd.DataFrame(columns=['cluster_label', 'feat1'])
+    filepath = temp_output_dir / "summary.csv"
+    summary_df = generate_cluster_summary(df_empty, filepath)
+    assert summary_df.empty
+    assert "Input DataFrame is empty. Cannot generate cluster summary." in caplog.text
+
+def test_save_dataframe_to_csv_type_error(temp_output_dir):
+    """
+    GIVEN: A list instead of a DataFrame.
+    WHEN:  save_dataframe_to_csv is called.
+    THEN:  It should raise a TypeError.
+    """
+    # Pass a list instead of a pandas DataFrame
+    not_a_df = [1, 2, 3]
+    filepath = temp_output_dir / "test.csv"
+    
+    with pytest.raises(TypeError):
+        save_dataframe_to_csv(not_a_df, filepath)
