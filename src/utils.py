@@ -342,7 +342,11 @@ def generate_cluster_summary(df: pd.DataFrame, output_filepath: Path):
     if 'cluster_label' not in df.columns:
         logger.error("DataFrame must contain 'cluster_label' column for generating cluster summary.")
         raise ValueError("Input DataFrame is missing required column ('cluster_label').")
-
+    if df.empty:
+        logger.error("Input DataFrame is empty. Cannot generate cluster summary.")
+        empty_summary = pd.DataFrame(columns=['sample_count']).rename_axis('cluster_label')
+        save_dataframe_to_csv(empty_summary, output_filepath)
+        return empty_summary
     # Select numeric columns for summary (exclude 'image_id' and 'cluster_label' if present)
     numeric_cols = df.select_dtypes(include=[np.number]).columns.drop(['image_id', 'cluster_label'], errors='ignore')
 
