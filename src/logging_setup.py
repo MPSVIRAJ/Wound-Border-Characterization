@@ -103,7 +103,7 @@ def setup_logging(log_level: str = "INFO", log_file_path: Optional[Path] = None)
     if log_file_path:
         try:
             log_file_path.parent.mkdir(parents=True, exist_ok=True) # Ensure directory exists
-            file_handler = logging.FileHandler(log_file_path, mode='a') # 'a' for append mode
+            file_handler = logging.FileHandler(log_file_path, mode='w') # 'a' for append 'w' for over write mode
             file_handler.setLevel(log_level.upper())
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
