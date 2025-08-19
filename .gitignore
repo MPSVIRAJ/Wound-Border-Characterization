@@ -23,8 +23,5 @@ dist/
 *.egg-info/
 *.egg
 
-# --- Ignored Notebooks ---
-# This notebook was for development and testing. The final, automated
-# logic is now in run_pipeline.py, and the detailed explanation is
-# in 01_pipeline_walkthrough.ipynb.
-02_batch_feature_extraction.ipynb
+# Ignore the Sphinx documentation build output
+docs/build/
