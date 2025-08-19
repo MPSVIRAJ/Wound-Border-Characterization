@@ -9,10 +9,8 @@ data integrity, and applying masks).
 
 Functions:
     - `data_loader`: Loads all image, mask, and depth map files for a single ImageID.
-    - `load_and_clean_features`: Loads a CSV of feature vectors, handles missing data,
-    and prepares it for ML tasks.
-    - `load_cluster_groups`: Loads image-to-cluster assignment data from a CSV and
-    groups images by their assigned cluster.
+    - `load_and_clean_features`: Loads a CSV of feature vectors, handles missing data, and prepares it for ML tasks.
+    - `load_cluster_groups`: Loads image-to-cluster assignment data from a CSV and groups images by their assigned cluster.
 
 Typical use:
     This module is primarily used by the main application entry point (`run_pipeline.py`)
@@ -60,7 +58,7 @@ def data_loader(ImageID: str, data_root_path: Path, subdirs_config: Dict[str, st
             - 'wound' (np.ndarray): The loaded grayscale wound mask. Its shape is (height, width).
             - 'body' (np.ndarray): The loaded grayscale body mask. Its shape is (height, width).
             - 'depth' (np.ndarray): The loaded grayscale depth map (e.g., 16-bit). Its shape is (height, width),
-                                    and it will have been masked by the body mask and marker mask (if applied).
+            and it will have been masked by the body mask and marker mask (if applied).
             Returns `None` if `ImageID` is invalid or a critical file is missing/unreadable.
 
     Raises:
@@ -72,10 +70,10 @@ def data_loader(ImageID: str, data_root_path: Path, subdirs_config: Dict[str, st
             If `subdirs_config` is missing expected keys.
 
     Output:
-        - **Log:**
+        - Log:
             Informational messages on successful loads. Warnings for optional file issues
             or shape mismatches. Errors for critical file loading failures.
-        - **Return Value:**
+        - Return Value:
             A dictionary of NumPy arrays for `image`, `wound`, `body`, `depth`.
 
     Example:
@@ -83,7 +81,6 @@ def data_loader(ImageID: str, data_root_path: Path, subdirs_config: Dict[str, st
         >>> import cv2
         >>> from pathlib import Path
         >>> # Assume logging is set up
-        >>>
         >>> # Assume data root path, subdirectory configuration and Image ID are as follows:
         >>> temp_data_root = Path("./temp_data_loader_example")
         >>> subdirs = {
@@ -92,9 +89,7 @@ def data_loader(ImageID: str, data_root_path: Path, subdirs_config: Dict[str, st
         ...     "marker_mask_subdir": "marker_mask"
         ... }
         >>> img_id = "sample_001"
-        >>>
         >>> loaded_data = data_loader(img_id, temp_data_root, subdirs)
-
 
     Relationships:
         - Dependencies:
@@ -229,8 +224,7 @@ def load_and_clean_features(file_path: Path) -> Tuple[pd.DataFrame, np.ndarray, 
         Tuple[pd.DataFrame, np.ndarray, np.ndarray]: A tuple containing:
             - df_clean (pd.DataFrame): Cleaned DataFrame without NaNs (includes 'image_id').
             - image_ids (np.ndarray): A NumPy array of image IDs from the cleaned DataFrame.
-            - features (np.ndarray): A NumPy array of feature vectors (without 'image_id').
-            If the CSV is empty, returns an empty DataFrame and empty NumPy arrays.
+            - features (np.ndarray): A NumPy array of feature vectors (without 'image_id'). If the CSV is empty, returns an empty DataFrame and empty NumPy arrays.
 
     Raises:
         FileNotFoundError:
@@ -242,8 +236,7 @@ def load_and_clean_features(file_path: Path) -> Tuple[pd.DataFrame, np.ndarray, 
 
     Output:
         - Log:
-            Informational messages about loading progress and NaN rows.
-            Error messages for critical failures like file not found or read errors.
+            Informational messages about loading progress and NaN rows. Error messages for critical failures like file not found or read errors.
         - Return Value:
             A tuple containing the cleaned DataFrame, image IDs array, and features array.
 
@@ -252,21 +245,20 @@ def load_and_clean_features(file_path: Path) -> Tuple[pd.DataFrame, np.ndarray, 
         >>> import numpy as np
         >>> from pathlib import Path
         >>> # Assume logging is set up
-        >>>
         >>> # Create a dummy CSV for the example
         >>> temp_csv_path = Path("./temp_features_data.csv")
-        >>>
         >>> df_clean, ids, feats = load_and_clean_features(temp_csv_path)
 
     Relationships:
-        - Dependencies:*
+        - Dependencies:
             - `pandas`: For DataFrame operations (`pd.read_csv`, `pd.DataFrame`, `.dropna()`, column selection).
             - `numpy`: For array manipulation (`np.ndarray`, `np.array`).
             - `pathlib`: For robust file path handling (`Path`).
             - `logging`: For outputting informational messages and errors.
+
         - Used by:
-            The clustering and classification pipeline sections (e.g., in `run_pipeline.py`)
-            to load the prepared feature set.
+            The clustering and classification pipeline sections (e.g., in `run_pipeline.py`) to load the prepared feature set.
+
     """
     try:
         logger.info(f"Loading feature data from '{file_path}'.")
@@ -315,7 +307,7 @@ def load_cluster_groups(file_path: Path) -> Tuple[pd.Series, pd.DataFrame]:
         Tuple[pd.Series, pd.DataFrame]: A tuple containing:
             - pd.Series: A Series mapping each cluster label to a list of image IDs, sorted by cluster label.
             - pd.DataFrame: The original DataFrame loaded from the CSV (includes 'image_id' and 'cluster_label').
-            If the CSV is empty, returns an empty Series and an empty DataFrame with expected columns.
+                If the CSV is empty, returns an empty Series and an empty DataFrame with expected columns.
 
     Raises:
         FileNotFoundError:
@@ -329,15 +321,13 @@ def load_cluster_groups(file_path: Path) -> Tuple[pd.Series, pd.DataFrame]:
         - Log:
             Informational messages about loading. Error messages for critical failures.
         - Return Value:
-             A tuple containing a Series of grouped image IDs and the original DataFrame.
+            A tuple containing a Series of grouped image IDs and the original DataFrame.
 
     Examples:
         >>> import pandas as pd
         >>> from pathlib import Path
         >>> # Assume logging is set up
-        >>>
         >>> temp_csv_path = Path("./temp_cluster_map.csv")
-        >>>
         >>> cluster_groups_series, cluster_map_df = load_cluster_groups(temp_csv_path)
     
     Relationships:
@@ -345,6 +335,7 @@ def load_cluster_groups(file_path: Path) -> Tuple[pd.Series, pd.DataFrame]:
             - `pandas`: For DataFrame operations (`pd.read_csv`, `pd.DataFrame`, `pd.Series`, `.groupby()`, `.apply()`).
             - `pathlib`: For robust file path handling (`Path`).
             - `logging`: For outputting informational messages and errors.
+
         - Used by:
             The clustering and classification pipelines (e.g., in `run_pipeline.py`)
             to retrieve cluster assignment information.

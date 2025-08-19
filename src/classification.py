@@ -420,13 +420,13 @@ def get_feature_importances(model: RandomForestClassifier, X_train_df: pd.DataFr
         >>> importances_df = get_feature_importances(model, X_train)
 
     Relationships:
-    - Dependencies:
-        - `pandas`: For DataFrame manipulation.
-        - `numpy`: For array operations.
-        - `sklearn.ensemble.RandomForestClassifier`: The type of model expected.
-        - `logging`: For outputting messages.
-    - Used by:
-        - The classification pipeline, to report feature importance.
+        - Dependencies:
+            - `pandas`: For DataFrame manipulation.
+            - `numpy`: For array operations.
+            - `sklearn.ensemble.RandomForestClassifier`: The type of model expected.
+            - `logging`: For outputting messages.
+        - Used by:
+            - The classification pipeline, to report feature importance.
     """
     if not isinstance(model, RandomForestClassifier):
         logger.error("Input 'model' must be a trained RandomForestClassifier.")

@@ -141,7 +141,7 @@ def perform_hdbscan_clustering(embedding: np.ndarray, df: pd.DataFrame, clusteri
         clustering_params (Dict[str, Any]): 
             Dictionary containing configurable parameters for HDBSCAN.
             Expected keys: 'hdbscan_min_cluster_size',
-                'hdbscan_min_samples', 'hdbscan_epsilon'.
+            'hdbscan_min_samples', 'hdbscan_epsilon'.
 
     Returns:
         Tuple[pd.DataFrame, int, int, np.ndarray]: A tuple containing:

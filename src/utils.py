@@ -50,8 +50,7 @@ def save_dataframe_to_csv(df: pd.DataFrame, output_filepath: Path, append_mode: 
             Controls when the header is written:
             - If `True`, the header will always be written.
             - If `False`, the header will never be written.
-            - If `None` (default), the header is written only if `append_mode` is `True`
-              and the file does not already exist.
+            - If `None` (default), the header is written only if `append_mode` is `True` and the file does not already exist.
             When `append_mode` is `False` (overwrite mode), `pd.to_csv` generally writes a
             header by default, unless `include_header` is explicitly set to `False`.
         index (bool, optional):
@@ -77,11 +76,12 @@ def save_dataframe_to_csv(df: pd.DataFrame, output_filepath: Path, append_mode: 
         >>> save_dataframe_to_csv(valid_ids_df, temp_csv_path, append_mode=False)
 
     Relationships:
-        - Dependencies:
+        Dependencies:
             - `pandas`: For DataFrame operations (`pd.DataFrame`, `.to_csv()`).
             - `pathlib`: For path manipulation (`Path`, `.parent`, `.mkdir()`, `.is_file()`).
             - `logging`: For logging informational and error messages.
             - `typing.Optional`: For type hinting.
+        
         Used by:
             This function is typically called by various parts of the main application
             (`run_pipeline.py` or other utility functions) to persist data to CSV files.

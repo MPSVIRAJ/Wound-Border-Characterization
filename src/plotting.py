@@ -616,8 +616,7 @@ def plot_cluster_image_grid(cluster_groups: pd.Series, image_dir: Path, save_pat
 
     Output:
         - Log:
-            Informational messages about successful plotting. Warnings for images that fail to load.
-          Errors if saving fails.
+            Informational messages about successful plotting. Warnings for images that fail to load. Errors if saving fails.
         - File:
             A PNG file of the plot at `save_path`.
 
@@ -635,6 +634,7 @@ def plot_cluster_image_grid(cluster_groups: pd.Series, image_dir: Path, save_pat
         >>> groups = pd.Series([['imgA'], ['imgB']], index=[0, 1])
         >>> dummy_path = Path('./dummy_image_grid.png')
         >>> plot_cluster_image_grid(groups, temp_dir, dummy_path)
+
     """
     if not isinstance(cluster_groups, pd.Series):
         logger.error("Input 'cluster_groups' must be a Pandas Series.")

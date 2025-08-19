@@ -9,14 +9,14 @@ The core functionality is encapsulated in a single function that orchestrates
 these steps to produce a full feature vector for a given image's profile.
 
 Functions:
-- `calculate_depth_profiles`: Calculates mean and standard deviation profiles from a 2D depth strip.
-- `r_squared`: Computes the R-squared value for a given curve fit.
-- `linear_func`: A helper function defining a linear model for curve fitting.
-- `sigmoid_func`: A helper function defining a sigmoid model for curve fitting.
-- `get_spectral_features`: Extracts spectral centroid and entropy from a profile segment.
-- `get_statistical_features`: Computes statistical moments (mean, std, skew, kurtosis) for a profile segment.
-- `butter_lowpass_filter`: Applies a Butterworth low-pass filter to smooth a signal.
-- `extract_features_from_profile`: The main function that orchestrates all feature extraction steps.
+    - `calculate_depth_profiles`: Calculates mean and standard deviation profiles from a 2D depth strip.
+    - `r_squared`: Computes the R-squared value for a given curve fit.
+    - `linear_func`: A helper function defining a linear model for curve fitting.
+    - `sigmoid_func`: A helper function defining a sigmoid model for curve fitting.
+    - `get_spectral_features`: Extracts spectral centroid and entropy from a profile segment.
+    - `get_statistical_features`: Computes statistical moments (mean, std, skew, kurtosis) for a profile segment.
+    - `butter_lowpass_filter`: Applies a Butterworth low-pass filter to smooth a signal.
+    - `extract_features_from_profile`: The main function that orchestrates all feature extraction steps.
 
 Typical use:
     This module is a core part of the feature extraction pipeline. It is typically used after
@@ -297,8 +297,8 @@ def get_spectral_features(profile_segment: np.ndarray) -> Dict[str, float]:
 
     Output:
         - Console/Log:
-            A warning message is logged if the profile is too short or if the
-          power spectrum sum is zero. Debug messages are logged for successful calculation.
+            A warning message is logged if the profile is too short or if the power spectrum sum is zero. 
+            Debug messages are logged for successful calculation.
         - Return Value:
             A dictionary of spectral features.
 
@@ -314,6 +314,7 @@ def get_spectral_features(profile_segment: np.ndarray) -> Dict[str, float]:
             - `logging`: For outputting messages.
         - Used by:
             `extract_features_from_profile` for extracting global textural features from the entire profile.
+
     """
     if not isinstance(profile_segment, np.ndarray):
         logger.error("Input 'profile_segment' must be a NumPy array.")
@@ -372,7 +373,7 @@ def get_statistical_features(profile: np.ndarray) -> Dict[str, float]:
     Output:
         - Console/Log:
             A debug message is logged upon successful calculation. A warning is logged
-          for an empty input.
+            for an empty input.
         - Return Value:
             A dictionary of statistical features.
 
@@ -381,7 +382,7 @@ def get_statistical_features(profile: np.ndarray) -> Dict[str, float]:
         >>> from src.feature_extraction import get_statistical_features
         >>> dummy_profile = np.array([1, 2, 3, 4, 5])
         >>> stats = get_statistical_features(dummy_profile)
- 
+
     Relationships:
         - Dependencies:
             - `numpy`: For array operations.
@@ -389,6 +390,7 @@ def get_statistical_features(profile: np.ndarray) -> Dict[str, float]:
             - `logging`: For outputting messages.
         - Used by:
             `extract_features_from_profile` for each of the three profile regions (bed, edge, skin).
+
     """
     if not isinstance(profile, np.ndarray):
         logger.error("Input 'profile' must be a NumPy array.")
