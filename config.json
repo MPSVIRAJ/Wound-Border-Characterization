@@ -47,7 +47,7 @@
   "Clustering": {
     "pacmap_n_components": 2,
     "pacmap_mn_ratio": 2,
-    "pacmap_fp_ratio": 9,
+    "pacmap_fp_ratio": 8,
     "random_state": 42,
     "hdbscan_min_cluster_size": 25,
     "hdbscan_min_samples": 6,
