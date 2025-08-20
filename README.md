@@ -33,7 +33,9 @@ The dataset for this study was provided by the IRCCS Sant' Orsola Malpighi Unive
 
 **Important:** Due to patient privacy and confidentiality, the clinical dataset is private and is **not included** in this repository.
 
-To allow for a functional demonstration of the entire pipeline, a small, synthetic **sample dataset** is provided in the `/sample_data` directory. This sample data can be used to run all stages of the project to verify its functionality.
+To allow for a functional demonstration of the pipeline's image processing capabilities, a small, synthetic **sample dataset** is provided in the `/sample_data` directory. This sample data can be used to run the **feature extraction stage (`extract`)** to verify that the initial part of the pipeline is working correctly.
+
+**Warning:** Running feature extraction on any data will overwrite the original `1_comprehensive_features.csv` file, which is required for evaluating the original ML pipeline described in the usage section.
 
 ### **Using Your Own Data**
 The pipeline is designed to work on custom datasets. To process your own images, you must provide the following four files for each sample, all sharing the same base filename (e.g., `image_001.png`):
@@ -188,6 +190,29 @@ This project includes a complete documentation website that provides an in-depth
 The documentation is automatically generated from the source code's docstrings using Sphinx and is hosted on GitHub Pages.
 
 **[➡️ View the Full Documentation Here](https://mpsviraj.github.io/Wound-Border-Characterization/)**
+
+## ⚠️ Limitations
+This project is a proof-of-concept framework and has the following known limitations:
+
+### * Technical & Data Format Limitations
+* **Minimum Dataset Size for ML Stages:** The machine learning stages (cluster and train) require a sufficiently large dataset to produce meaningful results. The HDBSCAN clustering algorithm is configured in config.json with a min_cluster_size of 25, meaning datasets with significantly fewer samples will likely result in all points being classified as noise, which will cause the training stage to fail.
+* **Strict Input Format:** The pipeline requires a complete set of four input files for each sample (RGB image, wound mask, body mask, and depth map). All four files must share an identical base filename and be correctly placed in their respective subdirectories (images/, wound_masks/, etc.).
+
+* **PNG File Format Only:** The pipeline is currently designed to read all input files (images, masks, and depth maps) exclusively in the .png format. Other formats such as .jpg are not supported.
+
+* **Limited Input Validation:** While the pipeline checks for the existence of files and correct data structures, it assumes that the input files are correctly formatted (e.g., that masks are binary and depth maps are 16-bit). It does not perform exhaustive validation on the content of the image files.
+
+* **No Graphical User Interface (GUI):** The project operates entirely as a command-line tool. It does not include a GUI for interaction.
+
+### Scientific & Methodological Limitations
+* **Non-Clinical Labels:** The wound type labels are generated via unsupervised clustering and have not been clinically validated by medical experts. They are based on statistical patterns in the data's geometry, not on a medical diagnosis.
+
+* **Model Generalizability:** The pre-trained model included in this repository was trained on a specific clinical dataset. Its performance on new images from different sources, with different lighting conditions, or captured by different devices is not guaranteed.
+
+* **Data-Dependent Results:** The number and nature of the clusters discovered are highly dependent on the input dataset. Retraining the pipeline on a new dataset will produce a new set of clusters that will require manual interpretation.
+
+### Project Scope Limitations
+* **Demonstration Data:** The provided sample data is synthetic and is intended solely for demonstrating that the pipeline's code is functional. The machine learning results (clusters, model accuracy, etc.) generated from this sample data are not scientifically meaningful.
 
 ## 📜 License
 Distributed under the MIT License. See [`LICENSE`](LICENSE) for more information.
