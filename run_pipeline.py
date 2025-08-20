@@ -241,6 +241,13 @@ def run_clustering_step(config: Config, paths: Dict[str, Path]):
         logger.error("No valid features found. Aborting clustering.")
         return
     
+    if len(df_clean) < 50:
+        logger.warning("Small dataset detected. Using lenient clustering parameters for demonstration.")
+        clustering_params['hdbscan_min_cluster_size'] = 2
+        clustering_params['hdbscan_min_samples'] = 1
+        clustering_params['pacmap_mn_ratio'] = 0.5
+        clustering_params['pacmap_fp_ratio'] = 2.0
+
     features_df = df_clean.drop(columns=['image_id'])
     embedding = apply_pacmap(features_df, clustering_params)
     if embedding is None:
@@ -252,16 +259,21 @@ def run_clustering_step(config: Config, paths: Dict[str, Path]):
     plot_embedding(embedding, paths['pacmap_graph'])
     plot_clusters(embedding, cluster_labels, paths['hdbscan_graph'])
     
-    _, image_clusters_df = save_cluster_assignments(df_with_labels, paths['image_cluster_map_csv'])
+    save_cluster_assignments(df_with_labels, paths['image_cluster_map_csv'])
     summary_df = generate_cluster_summary(df_with_labels, paths['cluster_summary_csv'])
     profiles_df = generate_cluster_profiles(df_with_labels, paths['cluster_profiles_csv'])
     
     features_to_plot = ['bed_mean', 'bed_std', 'edge_steepness', 'edge_amplitude', 'edge_std', 'skin_std']
     plot_feature_distributions_by_cluster(df_with_labels, features_to_plot, paths['feature_distribution_graph'])
     
-    plot_cluster_image_grid(cluster_groups=image_clusters_df.groupby('cluster_label')['image_id'].apply(list), 
-                            image_dir=paths['images_dir'], 
-                            save_path=paths['samples_for_clusters'])
+    cluster_groups_for_plotting = df_with_labels.groupby('cluster_label')['image_id'].apply(list)
+    
+    if -1 in cluster_groups_for_plotting.index and len(cluster_groups_for_plotting) == 1:
+        logger.warning("Only noise points were found. Skipping the cluster image grid plot.")
+    else:
+        plot_cluster_image_grid(cluster_groups=cluster_groups_for_plotting, 
+                                image_dir=paths['images_dir'], 
+                                save_path=paths['samples_for_clusters'])
     logger.info("Clustering step complete.")
 
 # --- Random Forest Classification ---
@@ -387,7 +399,7 @@ def main():
     requested tasks. It also handles prerequisite checks and cleanup operations.
     """
     parser = argparse.ArgumentParser(description="A machine learning pipeline for wound border characterization.")
-    parser.add_argument('stage', choices=['extract', 'cluster', 'train', 'predict', 'all'],
+    parser.add_argument('stage', choices=['extract', 'cluster', 'train', 'predict'],
                         help="The pipeline stage to execute.")
     parser.add_argument('--image_id', type=str,
                         help="For 'extract' stage: process a single ImageID to visualize intermediate steps.")
@@ -410,7 +422,7 @@ def main():
     
     # --- Stage Execution ---
     
-    if args.stage == 'extract' or args.stage == 'all':
+    if args.stage == 'extract':
         perform_cleanup(paths)
         filtered_df_path = paths['filtered_manifest_path']
 
@@ -436,10 +448,10 @@ def main():
             logger.info("Single image processing complete. Displaying plots.")
             plt.show()
 
-    if args.stage == 'cluster' or args.stage == 'all':
+    if args.stage == 'cluster':
         run_clustering_step(config, paths)
 
-    if args.stage == 'train' or args.stage == 'all':
+    if args.stage == 'train':
         run_training_step(config, paths)
     
     if args.stage == 'predict':
