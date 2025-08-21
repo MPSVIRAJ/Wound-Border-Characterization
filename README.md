@@ -33,7 +33,7 @@ The dataset for this study was provided by the IRCCS Sant' Orsola Malpighi Unive
 
 **Important:** Due to patient privacy and confidentiality, the clinical dataset is private and is **not included** in this repository.
 
-To allow for a functional demonstration of the pipeline's image processing capabilities, a small, synthetic **sample dataset** is provided in the `/sample_data` directory. This sample data can be used to run the **feature extraction stage (`extract`)** to verify that the initial part of the pipeline is working correctly.
+To allow for a functional demonstration of the pipeline's image processing capabilities, a small, **synthetic sample dataset** is provided in the `/sample_data` directory. This sample data can be used to run the **feature extraction stage (`extract`)** to verify that the initial part of the pipeline is working correctly. 
 
 **Warning:** Running feature extraction on any data will overwrite the original `1_comprehensive_features.csv` file, which is required for evaluating the original ML pipeline described in the usage section.
 
@@ -54,7 +54,6 @@ This project can be set up using either a Conda distribution (like Anaconda or M
 * Git
 * Conda or Python 3.10+
 
-
 ### Installation
 1.  **Clone the repository:**
     ```sh
@@ -62,7 +61,6 @@ This project can be set up using either a Conda distribution (like Anaconda or M
     cd Wound-Border-Characterization
     ```
 2.  **Create and activate a virtual environment (Optional):**
-    
     
     On macOS/Linux:
     ```sh
@@ -85,7 +83,6 @@ This project can be set up using either a Conda distribution (like Anaconda or M
 
     The repository includes a small, synthetic dataset to demonstrate the pipeline's functionality. Run the appropriate commands for your operating system to create a data directory and copy the sample files into it.
     
-
     On macOS / Linux:
     ```sh
     mkdir data
@@ -103,7 +100,7 @@ You are now ready to run the pipeline.
 ## ▶️ Usage
 The entire pipeline is controlled via the main script **run_pipeline.py**. You must specify a **stage** to execute, which tells the script which part of the process to run.
 
-**Important Note:** This repository includes the original, pre-computed feature file (outputs/1_comprehensive_features.csv)that was used to generate the results for the original study. This allows you to immediately evaluate the core machine learning components without needing the private image dataset.
+**Important Note:** This repository includes the original, pre-computed feature file (outputs/1_comprehensive_features.csv)that was used to generate the results for the original study. This allows you to immediately evaluate the core machine learning components (clustering and classification) without needing the private image dataset.
 
 The pipeline can be used in three primary ways depending on your goal.
 
@@ -115,19 +112,23 @@ This command will first run feature extraction on your data and then use the exi
 ```sh
 python run_pipeline.py predict
 ```
+
 ### **Use Case 2: Evaluating the Original Machine Learning Results**
 If you wish to verify and reproduce the original clustering and model training process, you can run the following stages directly. These commands use the included feature file.
+
 #### 1. Reproduce the clustering:
 ```sh
 python run_pipeline.py cluster
 ```
+
 #### 2. Reproduce the model training:
 ```sh
 python run_pipeline.py train
 ```
 
 ### **Use Case 3: Training a New Model on a Custom Dataset**
-If you have your own complete dataset and want to create a new model, you must run the pipeline stages step-by-step. Note: This process will overwrite the original feature file with features extracted from your images.
+If you have your own complete dataset and want to create a new model, you must run the pipeline stages step-by-step. 
+(Note: This process will overwrite the original feature file with features extracted from your images.)
 
 #### Step 1: Extract Features
 Run the feature extraction on your entire dataset.
@@ -153,10 +154,11 @@ Now, run the training stage. It will use your newly extracted features and your 
 ```sh
 python run_pipeline.py train
 ```
-After this step, your new custom-trained model is saved to the **outputs/** directory and is ready to be used for predictions.
+After this step, your new custom-trained model is saved to the **outputs/** directory and is ready to be used for  predictions.
 
 ## ✅ Tests
 This project is committed to code quality and reliability, backed by a comprehensive suite of unit tests. The tests verify all core functionalities, edge cases, and error-handling routines.
+
 ### Running the Test Suite
 To run all tests, execute the following command from the project root directory:
 ```sh
