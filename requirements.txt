@@ -17,7 +17,7 @@ seaborn==0.13.2
 tqdm==4.67.1
 
 # Image Processing
-opencv-python==4.11.0
+opencv-python==4.11.0.86
 pillow==11.2.1
 
 # --- Development & Testing Dependencies ---
