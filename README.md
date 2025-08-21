@@ -27,6 +27,18 @@ The primary goal of this project is to provide a robust framework for this type 
 * **Thoroughly Tested:** A comprehensive suite of unit tests ensures code reliability, achieving over 90% coverage on core application logic.
 * **CLI Controllable:** A robust command-line interface allows for easy execution of any individual pipeline stage (`extract`, `cluster`, `train`, `predict`) or the full sequence.
 
+### Built With
+
+This project was built using the following major libraries and frameworks:
+
+* [Python](https://www.python.org/) - Core programming language
+* [NumPy](https://numpy.org/) - Numerical computing
+* [Pandas](https://pandas.pydata.org/) - Data manipulation and analysis
+* [Scikit-learn](https://scikit-learn.org/) - Machine learning library
+* [OpenCV](https://opencv.org/) - Computer vision operations
+* [Matplotlib](https://matplotlib.org/) - Plotting and visualization
+* [Seaborn](https://seaborn.pydata.org/) - Statistical data visualization
+* [Pytest](https://pytest.org/) - Testing framework and coverage reporting
 
 ## 📊 The Dataset
 The dataset for this study was provided by the IRCCS Sant' Orsola Malpighi University Hospital in Bologna. It originated from an initial pool of 7,329 mobile phone images and their corresponding 16-bit depth maps, which were captured during daily clinical routines. After a programmatic quality filtering process, a final set of 1,436 images was selected for the pipeline, from which **1,143** were successfully processed to generate the final feature set.
@@ -113,6 +125,11 @@ This command will first run feature extraction on your data and then use the exi
 python run_pipeline.py predict
 ```
 
+### Expected Results:
+* Console output showing feature extraction progress for your new images
+* Generated feature file: 'outputs/1_comprehensive_features.csv' (overwrite exsisting file with new feature set extracted from your new images)
+* Console output showing prediction results for each wound
+
 ### **Use Case 2: Evaluating the Original Machine Learning Results**
 If you wish to verify and reproduce the original clustering and model training process, you can run the following stages directly. These commands use the included feature file.
 
@@ -120,11 +137,38 @@ If you wish to verify and reproduce the original clustering and model training p
 ```sh
 python run_pipeline.py cluster
 ```
+#### Expected Results:
+
+* Console output showing clustering progress and statistics
+* Generated files in 'outputs/' directory:
+    * 2_image_cluster_map.csv - Maps each image to its assigned cluster
+    * 3_cluster_summary.csv - Summary statistics for each discovered cluster
+    * 4_cluster_profiles.csv - Detailed feature profiles for each cluster
+    * 6_PACMAP_graph.png - PACMAP dimensionality reduction visualization
+    * 7_HDBSCAN_cluster_graph.png - HDBSCAN clustering visualization
+    * 8_samples_for_clusters.png - Representative sample images for each cluster
+    * 9_feature_distribution_boxplot.png - Feature distribution analysis across clusters
 
 #### 2. Reproduce the model training:
 ```sh
 python run_pipeline.py train
 ```
+#### Expected Results:
+
+* Console output showing:
+
+    * Model performance evaluation on test set
+    * Overall model accuracy
+    * Detailed classification report with precision, recall, and f1-score for each wound type
+    * Top 10 most important features ranked by importance scores
+    * Training completion confirmation
+
+* Generated files in 'outputs/' directory:
+
+    * 5_features_with_labels.csv - Feature dataset with assigned cluster labels
+    * 10_confusion_matrix.png - Model performance confusion matrix
+    * 11_feature_importance.png - Feature importance ranking visualization
+    * random_forest_model.joblib - Trained model file (saved internally for predictions)
 
 ### **Use Case 3: Training a New Model on a Custom Dataset**
 If you have your own complete dataset and want to create a new model, you must run the pipeline stages step-by-step. 
@@ -156,6 +200,15 @@ python run_pipeline.py train
 ```
 After this step, your new custom-trained model is saved to the **outputs/** directory and is ready to be used for  predictions.
 
+#### Expected Results:
+**Step 1 (Extract):**
+* Console output showing progress of feature extraction process
+* Generated file: `1_comprehensive_features.csv` saved in `outputs/` directory
+
+**Steps 2, 3, and 4:**
+
+See the 'Expected Results' described in the `cluster` and `train` steps under **Use Case 2** above.
+
 ## ✅ Tests
 This project is committed to code quality and reliability, backed by a comprehensive suite of unit tests. The tests verify all core functionalities, edge cases, and error-handling routines.
 
@@ -174,7 +227,7 @@ pytest --cov
 All modules containing core application logic are thoroughly tested. This includes:
 
 * data loading and preprocessing routines
-* Feature extraton process
+* Feature extraction process
 * Clustering processes
 * Classification tasks and other utility tasks
 
