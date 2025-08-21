@@ -28,7 +28,7 @@ The primary goal of this project is to provide a robust framework for this type 
 * **CLI Controllable:** A robust command-line interface allows for easy execution of any individual pipeline stage (`extract`, `cluster`, `train`, `predict`) or the full sequence.
 
 
-### 📊 The Dataset
+## 📊 The Dataset
 The dataset for this study was provided by the IRCCS Sant' Orsola Malpighi University Hospital in Bologna. It originated from an initial pool of 7,329 mobile phone images and their corresponding 16-bit depth maps, which were captured during daily clinical routines. After a programmatic quality filtering process, a final set of 1,436 images was selected for the pipeline, from which **1,143** were successfully processed to generate the final feature set.
 
 **Important:** Due to patient privacy and confidentiality, the clinical dataset is private and is **not included** in this repository.
