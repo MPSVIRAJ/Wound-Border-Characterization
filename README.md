@@ -61,10 +61,18 @@ These files must be placed in their corresponding subdirectories within the `/da
 
 ## 🚀 Getting Started
 To get a local copy up and running, follow these simple steps.
+
 ### Prerequisites
-This project can be set up using either a Conda distribution (like Anaconda or Miniforge) or a standard Python installation with Pip and Venv.
-* Git
-* Conda or Python 3.10+
+Before you begin, ensure you have the following installed:
+* **Python 3.10.11**: This project was developed and tested with this specific version. You can download it from the [official Python website](https://www.python.org/downloads/release/python-31011/).
+    * **Important:** During installation, make sure to check the box for **"Add Python 3.10 to PATH"**.
+
+* **Git**: For cloning the repository.
+
+* **(Windows Only) C++ Build Tools**: Some of the project's dependencies need to be compiled from source.
+    1.  Download the installer from [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/).
+    2.  Run the installer and select the **"Desktop development with C++"** workload.
+    3.  Click "Install".
 
 ### Installation
 1.  **Clone the repository:**
@@ -74,16 +82,25 @@ This project can be set up using either a Conda distribution (like Anaconda or M
     ```
 2.  **Create and activate a virtual environment (Optional):**
     
-    On macOS/Linux:
+    **On macOS/Linux:**
     ```sh
     python3 -m venv wbc_venv
     source wbc_venv/bin/activate 
     ```
 
-    On Windows:
+    **On Windows:**
+    
+    Make the environment 
     ```sh
-    python -m venv wbc_venv
-    .\wbc_venv\Scripts\activate       
+    python -m venv wbc_venv      
+    ```
+    Before activating, you may need to run this command in PowerShell:
+    ```powershell
+    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+    ```
+    Activate the environment:
+    ```powershell
+    .\wbc_venv\Scripts\activate
     ```
 
 3.  **Install dependencies:**
@@ -251,6 +268,9 @@ This project is a proof-of-concept framework and has the following known limitat
 
 ### * Technical & Data Format Limitations
 * **Minimum Dataset Size for ML Stages:** The machine learning stages (cluster and train) require a sufficiently large dataset to produce meaningful results. The HDBSCAN clustering algorithm is configured in config.json with a min_cluster_size of 25, meaning datasets with significantly fewer samples will likely result in all points being classified as noise, which will cause the training stage to fail.
+
+* **Cross-Platform Reproducibility:** The results of the machine learning algorithms, particularly the number of clusters discovered by HDBSCAN, may vary slightly when the pipeline is run on different operating systems or hardware (e.g., macOS vs. Windows). This is expected behavior due to minor differences in how floating-point calculations are handled by the underlying libraries on different platforms.
+
 * **Strict Input Format:** The pipeline requires a complete set of four input files for each sample (RGB image, wound mask, body mask, and depth map). All four files must share an identical base filename and be correctly placed in their respective subdirectories (images/, wound_masks/, etc.).
 
 * **PNG File Format Only:** The pipeline is currently designed to read all input files (images, masks, and depth maps) exclusively in the .png format. Other formats such as .jpg are not supported.
