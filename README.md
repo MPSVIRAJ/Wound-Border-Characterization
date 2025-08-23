@@ -26,6 +26,7 @@ The primary goal of this project is to provide a robust framework for this type 
 * **End-to-End Pipeline:** Includes modules for preprocessing, quantitative feature extraction, clustering, classification, and visualization.
 * **Thoroughly Tested:** A comprehensive suite of unit tests ensures code reliability, achieving over 90% coverage on core application logic.
 * **CLI Controllable:** A robust command-line interface allows for easy execution of any individual pipeline stage (`extract`, `cluster`, `train`, `predict`) or the full sequence.
+* **Interactive Visualization:** The pipeline generates interactive Matplotlib plots at key processing stages, allowing for an in-depth visual analysis of intermediate and final results.
 
 ### Built With
 
@@ -68,6 +69,8 @@ Before you begin, ensure you have the following installed:
     * **Important:** During installation, make sure to check the box for **"Add Python 3.10 to PATH"**.
 
 * **Git**: For cloning the repository.
+
+* **Tkinter GUI Toolkit:** This project's interactive plotting mode requires the Tkinter library. On many systems, this is included with Python by default. If it is not, you may need to install it separately using your system's package manager (e.g., `sudo apt-get install python3-tk` on Debian/Ubuntu, or `brew install tcl-tk` on macOS).
 
 * **(Windows Only) C++ Build Tools**: Some of the project's dependencies need to be compiled from source.
     1.  Download the installer from [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/).
@@ -277,7 +280,7 @@ This project is a proof-of-concept framework and has the following known limitat
 
 * **Limited Input Validation:** While the pipeline checks for the existence of files and correct data structures, it assumes that the input files are correctly formatted (e.g., that masks are binary and depth maps are 16-bit). It does not perform exhaustive validation on the content of the image files.
 
-* **No Graphical User Interface (GUI):** The project operates entirely as a command-line tool. It does not include a GUI for interaction.
+* **No Main Application GUI:** The project operates as a command-line tool and does not have an integrated graphical interface for running the full pipeline. However, it does produce interactive plot windows for visual analysis for some modes.
 
 ### Scientific & Methodological Limitations
 * **Non-Clinical Labels:** The wound type labels are generated via unsupervised clustering and have not been clinically validated by medical experts. They are based on statistical patterns in the data's geometry, not on a medical diagnosis.
