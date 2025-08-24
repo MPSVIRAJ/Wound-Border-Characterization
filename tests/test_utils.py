@@ -559,3 +559,481 @@ def test_save_dataframe_to_csv_type_error(temp_output_dir):
     
     with pytest.raises(TypeError):
         save_dataframe_to_csv(not_a_df, filepath)
+
+
+# ===== Additional tests for save_dataframe_to_csv =====
+
+def test_save_dataframe_to_csv_overwrite_with_explicit_no_header(temp_output_dir, caplog):
+    """
+    GIVEN: A DataFrame and overwrite mode with explicit include_header=False.
+    WHEN:  save_dataframe_to_csv is called with append_mode=False and include_header=False.
+    THEN:  A CSV file should be created without headers, testing the 'else' branch in overwrite mode.
+           An INFO message should be logged with header=False.
+    """
+    df_data = pd.DataFrame({'col1': [1, 2], 'col2': ['A', 'B']})
+    output_file = temp_output_dir / "no_header_test.csv"
+
+    save_dataframe_to_csv(df_data, output_file, append_mode=False, include_header=False)
+
+    assert output_file.exists()
+    # Should not contain header when include_header=False
+    content = output_file.read_text()
+    assert "col1,col2" not in content
+    assert "1,A\n2,B\n" in content
+    assert f"DataFrame successfully saved to {output_file} (mode='w', header=False, index=False)." in caplog.text
+
+
+def test_save_dataframe_to_csv_append_with_explicit_header_true(temp_output_dir, caplog):
+    """
+    GIVEN: An existing CSV file and append mode with explicit include_header=True.
+    WHEN:  save_dataframe_to_csv is called with append_mode=True and include_header=True.
+    THEN:  The DataFrame should be appended with a header (creating duplicate headers).
+           An INFO message should be logged indicating mode='a' and header=True.
+    """
+    # Create existing file
+    initial_df = pd.DataFrame({'col1': [1], 'col2': ['A']})
+    output_file = temp_output_dir / "explicit_header_test.csv"
+    create_dummy_csv(output_file, initial_df)
+    
+    df_to_append = pd.DataFrame({'col1': [2], 'col2': ['B']})
+    
+    save_dataframe_to_csv(df_to_append, output_file, append_mode=True, include_header=True)
+    
+    content = output_file.read_text()
+    # Should have header appended (though this creates duplicate headers)
+    assert content.count("col1,col2") == 2  # Original + appended header
+    assert f"DataFrame successfully saved to {output_file} (mode='a', header=True, index=False)." in caplog.text
+
+
+def test_save_dataframe_to_csv_with_index_true(temp_output_dir, caplog):
+    """
+    GIVEN: A DataFrame with named index and index=True parameter.
+    WHEN:  save_dataframe_to_csv is called with index=True.
+    THEN:  A CSV file should be created including the DataFrame index as a column.
+           An INFO message should be logged with index=True.
+    """
+    df_data = pd.DataFrame({'col1': [1, 2]}, index=['row1', 'row2'])
+    output_file = temp_output_dir / "with_index_test.csv"
+
+    save_dataframe_to_csv(df_data, output_file, append_mode=False, index=True)
+
+    content = output_file.read_text()
+    assert ",col1" in content  # Index column header (empty name)
+    assert "row1,1" in content
+    assert "row2,2" in content
+    assert f"DataFrame successfully saved to {output_file} (mode='w', header=True, index=True)." in caplog.text
+
+
+def test_save_dataframe_to_csv_directory_creation_nested(temp_output_dir, caplog):
+    """
+    GIVEN: A DataFrame and an output path with multiple nested directories that don't exist.
+    WHEN:  save_dataframe_to_csv is called.
+    THEN:  The nested directory structure should be created automatically (parents=True).
+           The CSV file should be saved successfully and an INFO message should be logged.
+    """
+    df_data = pd.DataFrame({'col1': [1]})
+    nested_path = temp_output_dir / "level1" / "level2" / "level3" / "nested.csv"
+
+    save_dataframe_to_csv(df_data, nested_path, append_mode=False)
+
+    assert nested_path.exists()
+    assert nested_path.parent.exists()
+    assert "INFO" in caplog.text
+
+
+# ===== Additional tests for save_features_to_csv =====
+
+def test_save_features_to_csv_type_error_features_dict(temp_output_dir, caplog):
+    """
+    GIVEN: A valid image ID but an invalid features_dict (not a dictionary).
+    WHEN:  save_features_to_csv is called.
+    THEN:  A TypeError should be raised with appropriate message.
+           An ERROR message should be logged about invalid type for features_dict.
+    """
+    image_id = "test_img"
+    not_a_dict = "not_a_dict"
+    output_file = temp_output_dir / "features.csv"
+
+    with pytest.raises(TypeError) as excinfo:
+        save_features_to_csv(image_id, not_a_dict, output_file)
+    
+    assert "features_dict must be a dictionary" in str(excinfo.value)
+    assert "ERROR" in caplog.text
+    assert f"Invalid type for features_dict: Expected dict, got {type(not_a_dict)}" in caplog.text
+
+
+def test_save_features_to_csv_type_error_output_filepath(caplog):
+    """
+    GIVEN: A valid image ID and features dictionary but invalid output_filepath (not a Path).
+    WHEN:  save_features_to_csv is called.
+    THEN:  A TypeError should be raised with appropriate message.
+           An ERROR message should be logged about invalid type for output_filepath.
+    """
+    image_id = "test_img"
+    features_dict = {'feat1': 1.0}
+    not_a_path = "/some/string/path"
+
+    with pytest.raises(TypeError) as excinfo:
+        save_features_to_csv(image_id, features_dict, not_a_path)
+    
+    assert "output_filepath must be a pathlib.Path object" in str(excinfo.value)
+    assert "ERROR" in caplog.text
+    assert f"Invalid type for output_filepath: Expected Path, got {type(not_a_path)}" in caplog.text
+
+
+def test_save_features_to_csv_features_dict_with_image_id_key(temp_output_dir, caplog):
+    """
+    GIVEN: A features dictionary that already contains an 'image_id' key.
+    WHEN:  save_features_to_csv is called.
+    THEN:  The 'image_id' key in features_dict should be overwritten with the ImageID parameter.
+           The CSV should have 'image_id' as the first column with the correct value.
+           An INFO message should be logged about successful saving.
+    """
+    image_id = "test_img_001"
+    features_dict = {'image_id': 'should_be_overwritten', 'feat_A': 0.5}
+    output_file = temp_output_dir / "features_with_id.csv"
+
+    save_features_to_csv(image_id, features_dict, output_file)
+
+    df_saved = pd.read_csv(output_file)
+    # The image_id from parameter should override the one in dict
+    assert df_saved['image_id'].iloc[0] == image_id
+    assert df_saved.columns.tolist() == ['image_id', 'feat_A']
+
+
+# ===== Additional tests for save_cluster_assignments =====
+
+def test_save_cluster_assignments_type_error_df(temp_output_dir, caplog):
+    """
+    GIVEN: A non-DataFrame object as the df parameter.
+    WHEN:  save_cluster_assignments is called.
+    THEN:  A TypeError should be raised with appropriate message.
+           An ERROR message should be logged about invalid type for df.
+    """
+    not_a_df = {'image_id': ['img1'], 'cluster_label': [0]}
+    output_file = temp_output_dir / "assignments.csv"
+
+    with pytest.raises(TypeError) as excinfo:
+        save_cluster_assignments(not_a_df, output_file)
+    
+    assert "df must be a pandas.DataFrame" in str(excinfo.value)
+    assert "ERROR" in caplog.text
+    assert f"Invalid type for df: Expected pd.DataFrame, got {type(not_a_df)}" in caplog.text
+
+
+def test_save_cluster_assignments_type_error_output_filepath(caplog):
+    """
+    GIVEN: A valid DataFrame but invalid output_filepath (not a Path object).
+    WHEN:  save_cluster_assignments is called.
+    THEN:  A TypeError should be raised with appropriate message.
+           An ERROR message should be logged about invalid type for output_filepath.
+    """
+    df_mock = pd.DataFrame({'image_id': ['img1'], 'cluster_label': [0]})
+    not_a_path = "string_path"
+
+    with pytest.raises(TypeError) as excinfo:
+        save_cluster_assignments(df_mock, not_a_path)
+    
+    assert "output_filepath must be a pathlib.Path object" in str(excinfo.value)
+    assert "ERROR" in caplog.text
+    assert f"Invalid type for output_filepath: Expected Path, got {type(not_a_path)}" in caplog.text
+
+
+def test_save_cluster_assignments_missing_image_id_only(temp_output_dir, caplog):
+    """
+    GIVEN: A DataFrame missing only the 'image_id' column (has 'cluster_label').
+    WHEN:  save_cluster_assignments is called.
+    THEN:  A ValueError should be raised about missing required columns.
+           An ERROR message should be logged about missing 'image_id' and 'cluster_label' columns.
+    """
+    df_mock = pd.DataFrame({'id': ['img1'], 'cluster_label': [0]})
+    output_file = temp_output_dir / "assignments.csv"
+
+    with pytest.raises(ValueError) as excinfo:
+        save_cluster_assignments(df_mock, output_file)
+    
+    assert "Input DataFrame is missing required columns" in str(excinfo.value)
+    assert "ERROR" in caplog.text
+
+
+def test_save_cluster_assignments_missing_cluster_label_only(temp_output_dir, caplog):
+    """
+    GIVEN: A DataFrame missing only the 'cluster_label' column (has 'image_id').
+    WHEN:  save_cluster_assignments is called.
+    THEN:  A ValueError should be raised about missing required columns.
+           An ERROR message should be logged about missing 'image_id' and 'cluster_label' columns.
+    """
+    df_mock = pd.DataFrame({'image_id': ['img1'], 'label': [0]})
+    output_file = temp_output_dir / "assignments.csv"
+
+    with pytest.raises(ValueError) as excinfo:
+        save_cluster_assignments(df_mock, output_file)
+    
+    assert "Input DataFrame is missing required columns" in str(excinfo.value)
+    assert "ERROR" in caplog.text
+
+
+def test_save_cluster_assignments_negative_cluster_labels(temp_output_dir, caplog):
+    """
+    GIVEN: A DataFrame with negative cluster labels (e.g., -1 for noise/outliers).
+    WHEN:  save_cluster_assignments is called.
+    THEN:  The function should handle negative labels correctly and return accurate cluster counts.
+           An INFO message should be logged with the cluster counts including negative values.
+    """
+    df_mock = pd.DataFrame({
+        'image_id': ['img1', 'img2', 'img3'],
+        'cluster_label': [-1, 0, -1]  # -1 might represent noise/outliers
+    })
+    output_file = temp_output_dir / "assignments_negative.csv"
+
+    cluster_counts = save_cluster_assignments(df_mock, output_file)
+    
+    assert cluster_counts == {-1: 2, 0: 1}
+    assert "Cluster sample counts: {-1: 2, 0: 1}" in caplog.text
+
+
+# ===== Additional tests for generate_cluster_summary =====
+
+def test_generate_cluster_summary_type_error_df(temp_output_dir, caplog):
+    """
+    GIVEN: A non-DataFrame object as the df parameter.
+    WHEN:  generate_cluster_summary is called.
+    THEN:  A TypeError should be raised with appropriate message.
+           An ERROR message should be logged about invalid type for df.
+    """
+    not_a_df = [1, 2, 3]
+    output_file = temp_output_dir / "summary.csv"
+
+    with pytest.raises(TypeError) as excinfo:
+        generate_cluster_summary(not_a_df, output_file)
+    
+    assert "df must be a pandas.DataFrame" in str(excinfo.value)
+    assert "ERROR" in caplog.text
+
+
+def test_generate_cluster_summary_type_error_output_filepath(caplog):
+    """
+    GIVEN: A valid DataFrame but invalid output_filepath (not a Path object).
+    WHEN:  generate_cluster_summary is called.
+    THEN:  A TypeError should be raised with appropriate message.
+           An ERROR message should be logged about invalid type for output_filepath.
+    """
+    df_mock = pd.DataFrame({'cluster_label': [0], 'feat1': [1]})
+    not_a_path = "string_path"
+
+    with pytest.raises(TypeError) as excinfo:
+        generate_cluster_summary(df_mock, not_a_path)
+    
+    assert "output_filepath must be a pathlib.Path object" in str(excinfo.value)
+    assert "ERROR" in caplog.text
+
+
+def test_generate_cluster_summary_with_mixed_numeric_columns(temp_output_dir, caplog):
+    """
+    GIVEN: A DataFrame with mixed numeric columns including numeric image_id.
+    WHEN:  generate_cluster_summary is called.
+    THEN:  The summary should exclude 'image_id' and 'cluster_label' even if they are numeric.
+           Only feature columns should be included in the summary statistics.
+           An INFO message should be logged about successful saving.
+    """
+    df_mock = pd.DataFrame({
+        'image_id': [1, 2, 3, 4],  # Numeric image_id
+        'feature_A': [10, 12, 20, 22],
+        'feature_B': [1, 2, 5, 6],
+        'cluster_label': [0, 0, 1, 1],
+        'non_numeric': ['a', 'b', 'c', 'd']
+    })
+    output_file = temp_output_dir / "mixed_summary.csv"
+
+    summary_df = generate_cluster_summary(df_mock, output_file)
+    
+    # Should exclude image_id even though it's numeric
+    expected_cols = ['cluster_label', 'feature_A_mean', 'feature_A_std', 'feature_A_count', 
+                    'feature_B_mean', 'feature_B_std', 'feature_B_count']
+    assert summary_df.columns.tolist() == expected_cols
+
+
+def test_generate_cluster_summary_reindex_with_missing_clusters(temp_output_dir, caplog):
+    """
+    GIVEN: A DataFrame where some clusters have NaN values that might be dropped during aggregation.
+    WHEN:  generate_cluster_summary is called.
+    THEN:  All unique clusters should be included in the result using reindex functionality.
+           Missing data should be handled with NaN values after fillna operation.
+           An INFO message should be logged about successful saving.
+    """
+    # Create data where cluster 1 has no numeric features (all NaN)
+    df_mock = pd.DataFrame({
+        'image_id': ['id1', 'id2', 'id3'],
+        'feature_A': [10, np.nan, 12],  # cluster 1 has NaN
+        'cluster_label': [0, 1, 0]
+    })
+    output_file = temp_output_dir / "reindex_summary.csv"
+
+    summary_df = generate_cluster_summary(df_mock, output_file)
+    
+    # Should include both clusters even if one has NaN values
+    assert set(summary_df['cluster_label'].values) == {0, 1}
+
+
+# ===== Additional tests for generate_cluster_profiles =====
+
+def test_generate_cluster_profiles_type_error_df(temp_output_dir, caplog):
+    """
+    GIVEN: A non-DataFrame object as the df parameter.
+    WHEN:  generate_cluster_profiles is called.
+    THEN:  A TypeError should be raised with appropriate message.
+           An ERROR message should be logged about invalid type for df.
+    """
+    not_a_df = "not_a_dataframe"
+    output_file = temp_output_dir / "profiles.csv"
+
+    with pytest.raises(TypeError) as excinfo:
+        generate_cluster_profiles(not_a_df, output_file)
+    
+    assert "df must be a pandas.DataFrame" in str(excinfo.value)
+    assert "ERROR" in caplog.text
+
+
+def test_generate_cluster_profiles_type_error_output_filepath(caplog):
+    """
+    GIVEN: A valid DataFrame but invalid output_filepath (not a Path object).
+    WHEN:  generate_cluster_profiles is called.
+    THEN:  A TypeError should be raised with appropriate message.
+           An ERROR message should be logged about invalid type for output_filepath.
+    """
+    df_mock = pd.DataFrame({'cluster_label': [0], 'feat1': [1]})
+    not_a_path = 123
+
+    with pytest.raises(TypeError) as excinfo:
+        generate_cluster_profiles(df_mock, not_a_path)
+    
+    assert "output_filepath must be a pathlib.Path object" in str(excinfo.value)
+    assert "ERROR" in caplog.text
+
+
+def test_generate_cluster_profiles_with_numeric_image_id(temp_output_dir, caplog):
+    """
+    GIVEN: A DataFrame with numeric image_id column and feature columns.
+    WHEN:  generate_cluster_profiles is called.
+    THEN:  The profiles should exclude 'image_id' and 'cluster_label' even if they are numeric.
+           Only feature columns should be included in the mean calculations.
+           An INFO message should be logged about successful saving.
+    """
+    df_mock = pd.DataFrame({
+        'image_id': [1, 2, 3, 4],  # Numeric image_id
+        'feature_X': [10.0, 11.0, 20.0, 21.0],
+        'feature_Y': [1.0, 1.2, 2.0, 2.3],
+        'cluster_label': [0, 0, 1, 1]
+    })
+    output_file = temp_output_dir / "profiles_numeric_id.csv"
+
+    profiles_df = generate_cluster_profiles(df_mock, output_file)
+    
+    # Should only include feature columns, not image_id
+    assert profiles_df.columns.tolist() == ['feature_X', 'feature_Y']
+    assert len(profiles_df) == 2  # Two clusters
+
+
+def test_generate_cluster_profiles_with_nan_values(temp_output_dir, caplog):
+    """
+    GIVEN: A DataFrame with NaN values in feature columns.
+    WHEN:  generate_cluster_profiles is called.
+    THEN:  The function should handle NaN values correctly in mean calculations.
+           Profiles should be generated with proper mean values excluding NaN.
+           An INFO message should be logged about successful saving.
+    """
+    df_mock = pd.DataFrame({
+        'image_id': ['id1', 'id2', 'id3', 'id4'],
+        'feature_X': [10.0, np.nan, 20.0, 21.0],
+        'feature_Y': [1.0, 1.2, np.nan, 2.3],
+        'cluster_label': [0, 0, 1, 1]
+    })
+    output_file = temp_output_dir / "profiles_with_nan.csv"
+
+    profiles_df = generate_cluster_profiles(df_mock, output_file)
+    
+    # Should handle NaN values in mean calculation
+    assert not profiles_df.empty
+    # Cluster 0, feature_X should be mean of [10.0, nan] = 10.0
+    assert profiles_df.loc[0, 'feature_X'] == 10.0
+
+
+# ===== Error propagation tests =====
+
+def test_save_features_to_csv_io_error_propagation(temp_output_dir, caplog, monkeypatch):
+    """
+    GIVEN: A scenario where save_dataframe_to_csv raises an IOError.
+    WHEN:  save_features_to_csv is called.
+    THEN:  The IOError should propagate up from the underlying save_dataframe_to_csv call.
+           The error should be raised without being caught or modified.
+    """
+    image_id = "test_img"
+    features_dict = {'feat1': 1.0}
+    output_file = temp_output_dir / "io_error_features.csv"
+
+    def mock_save_dataframe_to_csv(*args, **kwargs):
+        raise IOError("Mock IO Error")
+
+    monkeypatch.setattr('src.utils.save_dataframe_to_csv', mock_save_dataframe_to_csv)
+
+    with pytest.raises(IOError) as excinfo:
+        save_features_to_csv(image_id, features_dict, output_file)
+    
+    assert "Mock IO Error" in str(excinfo.value)
+
+
+def test_save_cluster_assignments_io_error_propagation(temp_output_dir, caplog, monkeypatch):
+    """
+    GIVEN: A scenario where save_dataframe_to_csv raises an IOError.
+    WHEN:  save_cluster_assignments is called.
+    THEN:  The IOError should propagate up from the underlying save_dataframe_to_csv call.
+           The error should be raised without being caught or modified.
+    """
+    df_mock = pd.DataFrame({'image_id': ['img1'], 'cluster_label': [0]})
+    output_file = temp_output_dir / "io_error_assignments.csv"
+
+    def mock_save_dataframe_to_csv(*args, **kwargs):
+        raise IOError("Mock IO Error")
+
+    monkeypatch.setattr('src.utils.save_dataframe_to_csv', mock_save_dataframe_to_csv)
+
+    with pytest.raises(IOError):
+        save_cluster_assignments(df_mock, output_file)
+
+
+def test_generate_cluster_summary_io_error_propagation(temp_output_dir, caplog, monkeypatch):
+    """
+    GIVEN: A scenario where save_dataframe_to_csv raises an IOError.
+    WHEN:  generate_cluster_summary is called.
+    THEN:  The IOError should propagate up from the underlying save_dataframe_to_csv call.
+           The error should be raised without being caught or modified.
+    """
+    df_mock = pd.DataFrame({'cluster_label': [0], 'feat1': [1]})
+    output_file = temp_output_dir / "io_error_summary.csv"
+
+    def mock_save_dataframe_to_csv(*args, **kwargs):
+        raise IOError("Mock IO Error")
+
+    monkeypatch.setattr('src.utils.save_dataframe_to_csv', mock_save_dataframe_to_csv)
+
+    with pytest.raises(IOError):
+        generate_cluster_summary(df_mock, output_file)
+
+
+def test_generate_cluster_profiles_io_error_propagation(temp_output_dir, caplog, monkeypatch):
+    """
+    GIVEN: A scenario where save_dataframe_to_csv raises an IOError.
+    WHEN:  generate_cluster_profiles is called.
+    THEN:  The IOError should propagate up from the underlying save_dataframe_to_csv call.
+           The error should be raised without being caught or modified.
+    """
+    df_mock = pd.DataFrame({'cluster_label': [0], 'feat1': [1.0]})
+    output_file = temp_output_dir / "io_error_profiles.csv"
+
+    def mock_save_dataframe_to_csv(*args, **kwargs):
+        raise IOError("Mock IO Error")
+
+    monkeypatch.setattr('src.utils.save_dataframe_to_csv', mock_save_dataframe_to_csv)
+
+    with pytest.raises(IOError):
+        generate_cluster_profiles(df_mock, output_file)

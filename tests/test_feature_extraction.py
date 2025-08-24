@@ -733,3 +733,389 @@ def test_extract_features_from_profile_fitting_failure_skin(caplog, monkeypatch)
     assert success is False
     assert features.get('skin_fit_success') == 0
     assert "Linear curve fitting failed for the periwound skin region. Skipping." in caplog.text
+
+# --- Additional Tests for linear_func ---
+
+def test_linear_func_type_error():
+    """
+    GIVEN: A non-numpy array input for x.
+    WHEN: linear_func is called.
+    THEN: It should raise a TypeError and log an error.
+    """
+    with pytest.raises(TypeError) as excinfo:
+        linear_func([0, 1, 2], 2.0, 1.0)
+    assert "Input 'x' must be a NumPy array." in str(excinfo.value)
+
+
+def test_linear_func_zero_values():
+    """
+    GIVEN: Zero slope and intercept values.
+    WHEN: linear_func is called.
+    THEN: It should return an array of zeros.
+    """
+    x = np.array([1, 2, 3, 4])
+    result = linear_func(x, m=0.0, c=0.0)
+    expected = np.array([0.0, 0.0, 0.0, 0.0])
+    np.testing.assert_allclose(result, expected)
+
+
+def test_linear_func_negative_slope():
+    """
+    GIVEN: A negative slope value.
+    WHEN: linear_func is called.
+    THEN: It should return correct decreasing y values.
+    """
+    x = np.array([0, 1, 2])
+    result = linear_func(x, m=-2.0, c=5.0)
+    expected = np.array([5.0, 3.0, 1.0])
+    np.testing.assert_allclose(result, expected)
+
+
+# --- Additional Tests for sigmoid_func ---
+
+def test_sigmoid_func_type_error():
+    """
+    GIVEN: A non-numpy array input for x.
+    WHEN: sigmoid_func is called.
+    THEN: It should raise a TypeError and log an error.
+    """
+    with pytest.raises(TypeError) as excinfo:
+        sigmoid_func([0, 1, 2], 10.0, 1.0, 0.0, 0.0)
+    assert "Input 'x' must be a NumPy array." in str(excinfo.value)
+
+
+def test_sigmoid_func_extreme_values():
+    """
+    GIVEN: Extreme parameter values for the sigmoid function.
+    WHEN: sigmoid_func is called.
+    THEN: It should handle the computation without errors.
+    """
+    x = np.array([-100, 0, 100])
+    # Test with extreme steepness
+    result = sigmoid_func(x, L=1.0, k=100.0, x0=0.0, offset=0.0)
+    assert len(result) == 3
+    assert not np.any(np.isnan(result))
+    assert not np.any(np.isinf(result))
+
+
+def test_sigmoid_func_zero_steepness():
+    """
+    GIVEN: Zero steepness parameter.
+    WHEN: sigmoid_func is called.
+    THEN: It should return constant values equal to L/2 + offset.
+    """
+    x = np.array([-5, 0, 5])
+    L, k, x0, offset = 10.0, 0.0, 0.0, 2.0
+    result = sigmoid_func(x, L, k, x0, offset)
+    expected = np.full(3, L/2 + offset)  # Should be 7.0 for all values
+    np.testing.assert_allclose(result, expected)
+
+
+# --- Additional Tests for butter_lowpass_filter ---
+
+def test_butter_lowpass_filter_type_error_numeric_params():
+    """
+    GIVEN: Non-numeric cutoff or fs parameters.
+    WHEN: butter_lowpass_filter is called.
+    THEN: It should raise a TypeError.
+    """
+    data = np.array([1, 2, 3, 4, 5])
+    
+    with pytest.raises(TypeError) as excinfo:
+        butter_lowpass_filter(data, cutoff="10", fs=100)
+    assert "Cutoff frequency and sampling frequency must be numeric." in str(excinfo.value)
+    
+    with pytest.raises(TypeError) as excinfo:
+        butter_lowpass_filter(data, cutoff=10, fs="100")
+    assert "Cutoff frequency and sampling frequency must be numeric." in str(excinfo.value)
+
+
+def test_butter_lowpass_filter_runtime_error():
+    """
+    GIVEN: Parameters that cause filter design to fail.
+    WHEN: butter_lowpass_filter is called.
+    THEN: It should raise a RuntimeError and log the exception.
+    """
+    data = np.array([1, 2, 3])
+    
+    # Mock butter to raise an exception
+    with patch('src.feature_extraction.butter') as mock_butter:
+        mock_butter.side_effect = ValueError("Mock filter design error")
+        
+        with pytest.raises(RuntimeError) as excinfo:
+            butter_lowpass_filter(data, cutoff=10, fs=100)
+        
+        assert "Filter design or application failed" in str(excinfo.value)
+
+
+def test_butter_lowpass_filter_filtfilt_error():
+    """
+    GIVEN: Parameters that cause filtfilt application to fail.
+    WHEN: butter_lowpass_filter is called.
+    THEN: It should raise a RuntimeError and log the exception.
+    """
+    data = np.array([1, 2, 3])
+    
+    # Mock filtfilt to raise an exception
+    with patch('src.feature_extraction.filtfilt') as mock_filtfilt:
+        mock_filtfilt.side_effect = ValueError("Mock filter application error")
+        
+        with pytest.raises(RuntimeError) as excinfo:
+            butter_lowpass_filter(data, cutoff=10, fs=100)
+        
+        assert "Filter design or application failed" in str(excinfo.value)
+
+
+def test_butter_lowpass_filter_high_cutoff_frequency():
+    """
+    GIVEN: A cutoff frequency higher than the Nyquist frequency.
+    WHEN: butter_lowpass_filter is called.
+    THEN: It should raise a RuntimeError due to invalid normalized cutoff.
+    """
+    fs = 100.0
+    cutoff = 60.0  # Higher than Nyquist (50 Hz)
+    data = np.random.randn(100)
+    
+    # Should raise an error because normalized cutoff > 1
+    with pytest.raises(RuntimeError) as excinfo:
+        butter_lowpass_filter(data, cutoff, fs)
+    assert "Filter design or application failed" in str(excinfo.value)
+
+
+# --- Additional Tests for extract_features_from_profile ---
+
+def test_extract_features_from_profile_no_filtering_short_profile():
+    """
+    GIVEN: A very short profile that skips butterworth filtering.
+    WHEN: extract_features_from_profile is called.
+    THEN: It should use the original profile without filtering.
+    """
+    profile_length = 8  # Less than 10
+    mean_profile = np.linspace(10, 0, profile_length)
+    d1 = 4
+    feature_params = {
+        'transition_width': 2,
+        'cutoff_freq': 0.1,
+        'butter_order': 4
+    }
+    
+    with patch('src.feature_extraction.butter_lowpass_filter') as mock_filter:
+        features, smoothed_profile, success = extract_features_from_profile(mean_profile, d1, feature_params)
+        
+        # Filter should not be called for short profiles
+        mock_filter.assert_not_called()
+        np.testing.assert_array_equal(smoothed_profile, mean_profile)
+
+
+def test_extract_features_from_profile_edge_region_boundary_conditions():
+    """
+    GIVEN: A profile where the edge region boundaries are at the extremes.
+    WHEN: extract_features_from_profile is called.
+    THEN: It should handle the boundary conditions correctly.
+    """
+    profile_length = 100
+    mean_profile = np.linspace(10, 0, profile_length)
+    d1 = 0  # Edge at the very beginning
+    feature_params = {
+        'transition_width': 10,
+        'cutoff_freq': 0.1,
+        'butter_order': 4
+    }
+    
+    features, _, success = extract_features_from_profile(mean_profile, d1, feature_params)
+    
+    # Should handle this gracefully
+    assert isinstance(features, dict)
+    # Bed region should be empty, so bed_fit_success should be 0
+    assert features.get('bed_fit_success') == 0
+
+
+def test_extract_features_from_profile_d1_at_end():
+    """
+    GIVEN: A profile where d1 is at the very end.
+    WHEN: extract_features_from_profile is called.
+    THEN: It should handle this boundary condition correctly.
+    """
+    profile_length = 100
+    mean_profile = np.linspace(10, 0, profile_length)
+    d1 = profile_length - 1  # Edge at the very end
+    feature_params = {
+        'transition_width': 10,
+        'cutoff_freq': 0.1,
+        'butter_order': 4
+    }
+    
+    features, _, success = extract_features_from_profile(mean_profile, d1, feature_params)
+    
+    # Should handle this gracefully
+    assert isinstance(features, dict)
+    # Skin region should be very small or empty
+    assert features.get('skin_fit_success') == 0
+
+
+def test_extract_features_from_profile_missing_feature_params():
+    """
+    GIVEN: A feature_params dictionary missing required keys.
+    WHEN: extract_features_from_profile is called.
+    THEN: It should raise a KeyError.
+    """
+    mean_profile = np.array([1, 2, 3, 4, 5])
+    d1 = 2
+    feature_params = {}  # Missing required keys
+    
+    with pytest.raises(KeyError):
+        extract_features_from_profile(mean_profile, d1, feature_params)
+
+
+def test_extract_features_from_profile_negative_d1():
+    """
+    GIVEN: A negative d1 value.
+    WHEN: extract_features_from_profile is called.
+    THEN: It should handle this edge case without crashing.
+    """
+    profile_length = 100
+    mean_profile = np.linspace(10, 0, profile_length)
+    d1 = -10  # Negative d1
+    feature_params = {
+        'transition_width': 20,
+        'cutoff_freq': 0.1,
+        'butter_order': 4
+    }
+    
+    features, _, success = extract_features_from_profile(mean_profile, d1, feature_params)
+    
+    # Should handle this without crashing
+    assert isinstance(features, dict)
+    # Most fits should fail due to invalid segmentation
+    assert not success
+
+
+def test_extract_features_from_profile_all_regions_too_small(caplog):
+    """
+    GIVEN: A profile and parameters where all three regions are too small for fitting.
+    WHEN: extract_features_from_profile is called.
+    THEN: All fit_success flags should be 0 and success should be False.
+    """
+    profile_length = 6  # Very small profile
+    mean_profile = np.linspace(10, 0, profile_length)
+    d1 = 3
+    feature_params = {
+        'transition_width': 4,  # Transition width larger than useful regions
+        'cutoff_freq': 0.1,
+        'butter_order': 4
+    }
+    
+    features, _, success = extract_features_from_profile(mean_profile, d1, feature_params)
+    
+    assert success is False
+    # Check that at least most regions fail to fit
+    failed_fits = sum([
+        features.get('bed_fit_success', 0) == 0,
+        features.get('edge_fit_success', 0) == 0,
+        features.get('skin_fit_success', 0) == 0
+    ])
+    assert failed_fits >= 2  # At least 2 out of 3 regions should fail
+
+
+def test_extract_features_from_profile_curve_fit_index_error(caplog, monkeypatch):
+    """
+    GIVEN: A scenario where curve_fit raises an IndexError.
+    WHEN: extract_features_from_profile is called.
+    THEN: It should handle the IndexError gracefully and log a warning.
+    """
+    profile_length = 200
+    mean_profile = np.linspace(10, 0, profile_length) + np.random.randn(profile_length) * 0.1
+    d1 = 100
+    feature_params = {
+        'transition_width': 50,
+        'cutoff_freq': 0.1,
+        'butter_order': 4
+    }
+
+    # Import curve_fit to use in the mock
+    from scipy.optimize import curve_fit
+    
+    original_curve_fit = curve_fit
+    call_count = 0
+    
+    def mock_curve_fit(func, x, y, *args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        # Target the first call to linear_func (bed region)
+        if func.__name__ == 'linear_func' and call_count == 1:
+            raise IndexError("Mock index error")
+        return original_curve_fit(func, x, y, *args, **kwargs)
+
+    monkeypatch.setattr('src.feature_extraction.curve_fit', mock_curve_fit)
+
+    features, _, success = extract_features_from_profile(mean_profile, d1, feature_params)
+    
+    assert success is False
+    assert features.get('bed_fit_success') == 0
+    assert "Linear curve fitting failed for the wound bed region. Skipping." in caplog.text
+
+
+def test_extract_features_from_profile_runtime_exception_handling():
+    """
+    GIVEN: A profile that causes a general runtime exception during segmentation.
+    WHEN: extract_features_from_profile is called with invalid parameters.
+    THEN: It should catch the exception and return appropriate failure response.
+    """
+    mean_profile = np.array([])  # Empty profile should be caught by earlier validation
+    d1 = 50
+    feature_params = {
+        'transition_width': 10,
+        'cutoff_freq': 0.1,
+        'butter_order': 4
+    }
+    
+    with pytest.raises(ValueError) as excinfo:
+        extract_features_from_profile(mean_profile, d1, feature_params)
+    assert "Inputs must be non-empty arrays of the same shape." in str(excinfo.value)
+
+
+def test_extract_features_from_profile_empty_mean_profile_stats():
+    """
+    GIVEN: A profile where one of the regions ends up empty for stats calculation.
+    WHEN: extract_features_from_profile is called.
+    THEN: It should handle the empty region gracefully.
+    """
+    profile_length = 20
+    mean_profile = np.linspace(10, 0, profile_length)
+    d1 = 19  # Very close to the end
+    feature_params = {
+        'transition_width': 2,
+        'cutoff_freq': 0.1,
+        'butter_order': 4
+    }
+    
+    features, _, success = extract_features_from_profile(mean_profile, d1, feature_params)
+    
+    # Should handle gracefully even if some regions are empty
+    assert isinstance(features, dict)
+
+
+# --- Test for get_spectral_features edge cases ---
+
+def test_get_spectral_features_type_error():
+    """
+    GIVEN: A non-numpy array input.
+    WHEN: get_spectral_features is called.
+    THEN: It should raise a TypeError.
+    """
+    with pytest.raises(TypeError) as excinfo:
+        get_spectral_features([1, 2, 3, 4, 5])
+    assert "Input 'profile_segment' must be a NumPy array." in str(excinfo.value)
+
+
+# --- Test for get_statistical_features edge cases ---
+
+def test_get_statistical_features_type_error():
+    """
+    GIVEN: A non-numpy array input.
+    WHEN: get_statistical_features is called.
+    THEN: It should raise a TypeError.
+    """
+    with pytest.raises(TypeError) as excinfo:
+        get_statistical_features([1, 2, 3, 4, 5])
+    assert "Input 'profile' must be a NumPy array." in str(excinfo.value)

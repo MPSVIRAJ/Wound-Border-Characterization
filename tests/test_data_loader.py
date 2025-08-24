@@ -506,3 +506,478 @@ def test_load_cluster_groups_missing_columns(temp_data_root, caplog):
         load_cluster_groups(csv_path)
     assert f"Required 'image_id' or 'cluster_label' column not found in '{csv_path}'." in str(excinfo.value)
     assert f"Required 'image_id' or 'cluster_label' column not found in loaded CSV: '{csv_path}'." in caplog.text
+
+
+def test_data_loader_missing_wound_mask(temp_data_root, subdirs_config, caplog):
+    """
+    GIVEN: A missing wound mask file (critical file).
+    WHEN:  data_loader is called.
+    THEN:  FileNotFoundError should be raised, and an ERROR message logged.
+    """
+    image_id = "missing_wound_mask"
+    
+    # Create all other necessary files
+    create_dummy_image(temp_data_root / subdirs_config['images_subdir'] / f"{image_id}.png")
+    create_dummy_mask(temp_data_root / subdirs_config['body_mask_subdir'] / f"{image_id}.png")
+    create_dummy_depth_map(temp_data_root / subdirs_config['depth_maps_subdir'] / f"{image_id}.png")
+    (temp_data_root / subdirs_config['marker_mask_subdir']).mkdir(parents=True, exist_ok=True)
+    
+    # Intentionally don't create wound mask but create its directory
+    (temp_data_root / subdirs_config['wound_masks_subdir']).mkdir(parents=True, exist_ok=True)
+
+    with pytest.raises(FileNotFoundError) as excinfo:
+        data_loader(image_id, temp_data_root, subdirs_config)
+    
+    expected_path = temp_data_root / subdirs_config['wound_masks_subdir'] / f"{image_id}.png"
+    assert f"Wound mask file not found: {expected_path}" in str(excinfo.value)
+    assert f"Wound mask file not found at {expected_path}. Terminating processing for this ID." in caplog.text
+
+
+def test_data_loader_missing_depth_map(temp_data_root, subdirs_config, caplog):
+    """
+    GIVEN: A missing depth map file (critical file).
+    WHEN:  data_loader is called.
+    THEN:  FileNotFoundError should be raised, and an ERROR message logged.
+    """
+    image_id = "missing_depth_map"
+    
+    # Create all other necessary files
+    create_dummy_image(temp_data_root / subdirs_config['images_subdir'] / f"{image_id}.png")
+    create_dummy_mask(temp_data_root / subdirs_config['wound_masks_subdir'] / f"{image_id}.png")
+    create_dummy_mask(temp_data_root / subdirs_config['body_mask_subdir'] / f"{image_id}.png")
+    (temp_data_root / subdirs_config['marker_mask_subdir']).mkdir(parents=True, exist_ok=True)
+    
+    # Intentionally don't create depth map but create its directory
+    (temp_data_root / subdirs_config['depth_maps_subdir']).mkdir(parents=True, exist_ok=True)
+
+    with pytest.raises(FileNotFoundError) as excinfo:
+        data_loader(image_id, temp_data_root, subdirs_config)
+    
+    expected_path = temp_data_root / subdirs_config['depth_maps_subdir'] / f"{image_id}.png"
+    assert f"Depth map file not found: {expected_path}" in str(excinfo.value)
+    assert f"Depth map file not found at {expected_path}. Terminating processing for this ID." in caplog.text
+
+
+def test_data_loader_missing_body_mask(temp_data_root, subdirs_config, caplog):
+    """
+    GIVEN: A missing body mask file (critical file).
+    WHEN:  data_loader is called.
+    THEN:  FileNotFoundError should be raised, and an ERROR message logged.
+    """
+    image_id = "missing_body_mask"
+    
+    # Create all other necessary files
+    create_dummy_image(temp_data_root / subdirs_config['images_subdir'] / f"{image_id}.png")
+    create_dummy_mask(temp_data_root / subdirs_config['wound_masks_subdir'] / f"{image_id}.png")
+    create_dummy_depth_map(temp_data_root / subdirs_config['depth_maps_subdir'] / f"{image_id}.png")
+    (temp_data_root / subdirs_config['marker_mask_subdir']).mkdir(parents=True, exist_ok=True)
+    
+    # Intentionally don't create body mask but create its directory
+    (temp_data_root / subdirs_config['body_mask_subdir']).mkdir(parents=True, exist_ok=True)
+
+    with pytest.raises(FileNotFoundError) as excinfo:
+        data_loader(image_id, temp_data_root, subdirs_config)
+    
+    expected_path = temp_data_root / subdirs_config['body_mask_subdir'] / f"{image_id}.png"
+    assert f"Body mask file not found: {expected_path}" in str(excinfo.value)
+    assert f"Body mask file not found at {expected_path}. Terminating processing for this ID (body mask compulsory)." in caplog.text
+
+
+def test_data_loader_unreadable_wound_mask(temp_data_root, subdirs_config, caplog, monkeypatch):
+    """
+    GIVEN: A wound mask file that cv2.imread cannot read.
+    WHEN:  data_loader is called.
+    THEN:  IOError should be raised, and an ERROR message logged.
+    """
+    image_id = "unreadable_wound"
+    
+    # Create all necessary files
+    create_dummy_image(temp_data_root / subdirs_config['images_subdir'] / f"{image_id}.png")
+    create_dummy_mask(temp_data_root / subdirs_config['body_mask_subdir'] / f"{image_id}.png")
+    create_dummy_depth_map(temp_data_root / subdirs_config['depth_maps_subdir'] / f"{image_id}.png")
+    (temp_data_root / subdirs_config['marker_mask_subdir']).mkdir(parents=True, exist_ok=True)
+    
+    # Create unreadable wound mask
+    wound_mask_path = temp_data_root / subdirs_config['wound_masks_subdir'] / f"{image_id}.png"
+    wound_mask_path.parent.mkdir(parents=True, exist_ok=True)
+    wound_mask_path.touch()
+
+    # Mock cv2.imread to return None for wound mask
+    original_imread = cv2.imread
+    def mock_imread(path, *args, **kwargs):
+        if Path(path) == wound_mask_path and len(args) > 0 and args[0] == cv2.IMREAD_GRAYSCALE:
+            return None
+        return original_imread(path, *args, **kwargs)
+    monkeypatch.setattr(cv2, 'imread', mock_imread)
+
+    with pytest.raises(IOError) as excinfo:
+        data_loader(image_id, temp_data_root, subdirs_config)
+    
+    assert f"Failed to read wound mask file: {wound_mask_path}" in str(excinfo.value)
+    assert f"Wound mask file at {wound_mask_path} could not be read. Terminating processing for this ID." in caplog.text
+
+
+def test_data_loader_unreadable_depth_map(temp_data_root, subdirs_config, caplog, monkeypatch):
+    """
+    GIVEN: A depth map file that cv2.imread cannot read.
+    WHEN:  data_loader is called.
+    THEN:  IOError should be raised, and an ERROR message logged.
+    """
+    image_id = "unreadable_depth"
+    
+    # Create all other necessary files
+    create_dummy_image(temp_data_root / subdirs_config['images_subdir'] / f"{image_id}.png")
+    create_dummy_mask(temp_data_root / subdirs_config['wound_masks_subdir'] / f"{image_id}.png")
+    create_dummy_mask(temp_data_root / subdirs_config['body_mask_subdir'] / f"{image_id}.png")
+    (temp_data_root / subdirs_config['marker_mask_subdir']).mkdir(parents=True, exist_ok=True)
+    
+    # Create unreadable depth map
+    depth_map_path = temp_data_root / subdirs_config['depth_maps_subdir'] / f"{image_id}.png"
+    depth_map_path.parent.mkdir(parents=True, exist_ok=True)
+    depth_map_path.touch()
+
+    # Mock cv2.imread to return None for depth map
+    original_imread = cv2.imread
+    def mock_imread(path, *args, **kwargs):
+        if Path(path) == depth_map_path and len(args) > 0 and args[0] == cv2.IMREAD_ANYDEPTH:
+            return None
+        return original_imread(path, *args, **kwargs)
+    monkeypatch.setattr(cv2, 'imread', mock_imread)
+
+    with pytest.raises(IOError) as excinfo:
+        data_loader(image_id, temp_data_root, subdirs_config)
+    
+    assert f"Failed to read depth map file: {depth_map_path}" in str(excinfo.value)
+    assert f"Depth map file at {depth_map_path} could not be read. Terminating processing for this ID." in caplog.text
+
+
+def test_data_loader_unreadable_body_mask(temp_data_root, subdirs_config, caplog, monkeypatch):
+    """
+    GIVEN: A body mask file that cv2.imread cannot read.
+    WHEN:  data_loader is called.
+    THEN:  IOError should be raised, and an ERROR message logged.
+    """
+    image_id = "unreadable_body"
+    
+    # Create all other necessary files
+    create_dummy_image(temp_data_root / subdirs_config['images_subdir'] / f"{image_id}.png")
+    create_dummy_mask(temp_data_root / subdirs_config['wound_masks_subdir'] / f"{image_id}.png")
+    create_dummy_depth_map(temp_data_root / subdirs_config['depth_maps_subdir'] / f"{image_id}.png")
+    (temp_data_root / subdirs_config['marker_mask_subdir']).mkdir(parents=True, exist_ok=True)
+    
+    # Create unreadable body mask
+    body_mask_path = temp_data_root / subdirs_config['body_mask_subdir'] / f"{image_id}.png"
+    body_mask_path.parent.mkdir(parents=True, exist_ok=True)
+    body_mask_path.touch()
+
+    # Mock cv2.imread to return None for body mask
+    original_imread = cv2.imread
+    def mock_imread(path, *args, **kwargs):
+        if Path(path) == body_mask_path and len(args) > 0 and args[0] == cv2.IMREAD_GRAYSCALE:
+            return None
+        return original_imread(path, *args, **kwargs)
+    monkeypatch.setattr(cv2, 'imread', mock_imread)
+
+    with pytest.raises(IOError) as excinfo:
+        data_loader(image_id, temp_data_root, subdirs_config)
+    
+    assert f"Failed to read body mask file: {body_mask_path}" in str(excinfo.value)
+    assert f"Body mask file at {body_mask_path} could not be read. Terminating processing for this ID (body mask compulsory)." in caplog.text
+
+
+def test_data_loader_unreadable_marker_mask(temp_data_root, subdirs_config, caplog, monkeypatch):
+    """
+    GIVEN: A marker mask file that cv2.imread cannot read.
+    WHEN:  data_loader is called.
+    THEN:  Processing should continue with a default marker mask, and a WARNING logged.
+    """
+    image_id = "unreadable_marker"
+    
+    # Create all necessary files
+    create_dummy_image(temp_data_root / subdirs_config['images_subdir'] / f"{image_id}.png")
+    create_dummy_mask(temp_data_root / subdirs_config['wound_masks_subdir'] / f"{image_id}.png")
+    create_dummy_mask(temp_data_root / subdirs_config['body_mask_subdir'] / f"{image_id}.png", value=255)
+    create_dummy_depth_map(temp_data_root / subdirs_config['depth_maps_subdir'] / f"{image_id}.png", value=100)
+    
+    # Create unreadable marker mask
+    marker_mask_path = temp_data_root / subdirs_config['marker_mask_subdir'] / f"{image_id}.png"
+    marker_mask_path.parent.mkdir(parents=True, exist_ok=True)
+    marker_mask_path.touch()
+
+    # Mock cv2.imread to return None for marker mask
+    original_imread = cv2.imread
+    def mock_imread(path, *args, **kwargs):
+        if Path(path) == marker_mask_path and len(args) > 0 and args[0] == cv2.IMREAD_GRAYSCALE:
+            return None
+        return original_imread(path, *args, **kwargs)
+    monkeypatch.setattr(cv2, 'imread', mock_imread)
+
+    loaded_data = data_loader(image_id, temp_data_root, subdirs_config)
+
+    assert loaded_data is not None
+    assert isinstance(loaded_data['depth'], np.ndarray)
+    assert np.all(loaded_data['depth'] == 100)  # Should remain unchanged due to default zero marker mask
+    assert f"Marker mask file at {marker_mask_path} could not be read. Defaulting marker mask to all black (no masking effect)." in caplog.text
+
+
+def test_load_and_clean_features_keyerror_handling(temp_data_root, caplog):
+    """
+    GIVEN: A CSV file missing the 'image_id' column.
+    WHEN:  load_and_clean_features is called.
+    THEN:  IOError should be raised (KeyError gets caught and re-raised as IOError), and ERROR messages logged.
+    """
+    df_missing_id = pd.DataFrame({'feature_A': [1.1, 2.2], 'feature_B': [5.5, 6.6]})
+    csv_path = temp_data_root / "missing_id_keyerror.csv"
+    create_dummy_csv(csv_path, df_missing_id)
+
+    with pytest.raises(IOError) as excinfo:
+        load_and_clean_features(csv_path)
+    assert f"Error loading/cleaning features from '{csv_path}'" in str(excinfo.value)
+    assert f"Required 'image_id' column not found in loaded CSV: '{csv_path}'." in caplog.text
+    assert f"An unexpected error occurred while loading or cleaning features from '{csv_path}'." in caplog.text
+
+
+def test_load_and_clean_features_general_exception(temp_data_root, caplog, monkeypatch):
+    """
+    GIVEN: A scenario that causes a general exception during CSV processing.
+    WHEN:  load_and_clean_features is called.
+    THEN:  IOError should be raised, and an exception logged.
+    """
+    features_df_data = {
+        'image_id': ['img1', 'img2'],
+        'feat_A': [1.1, 2.2],
+    }
+    features_csv_path = temp_data_root / "exception_test.csv"
+    create_dummy_csv(features_csv_path, pd.DataFrame(features_df_data))
+
+    # Mock pandas read_csv to raise a general exception
+    original_read_csv = pd.read_csv
+    def mock_read_csv(*args, **kwargs):
+        if str(features_csv_path) in str(args[0]):
+            raise ValueError("Simulated CSV processing error")
+        return original_read_csv(*args, **kwargs)
+    monkeypatch.setattr(pd, 'read_csv', mock_read_csv)
+
+    with pytest.raises(IOError) as excinfo:
+        load_and_clean_features(features_csv_path)
+    assert f"Error loading/cleaning features from '{features_csv_path}': Simulated CSV processing error" in str(excinfo.value)
+    assert f"An unexpected error occurred while loading or cleaning features from '{features_csv_path}'." in caplog.text
+
+
+def test_load_cluster_groups_keyerror_handling(temp_data_root, caplog):
+    """
+    GIVEN: A CSV file missing required columns ('image_id' or 'cluster_label').
+    WHEN:  load_cluster_groups is called.
+    THEN:  IOError should be raised (KeyError gets caught and re-raised as IOError), and ERROR messages logged.
+    """
+    df_bad_cols = pd.DataFrame({'ImageID': ['id1', 'id2'], 'Label': [0, 1]})
+    csv_path = temp_data_root / "bad_cluster_keyerror.csv"
+    create_dummy_csv(csv_path, df_bad_cols)
+
+    with pytest.raises(IOError) as excinfo:
+        load_cluster_groups(csv_path)
+    assert f"Error loading cluster groups from '{csv_path}'" in str(excinfo.value)
+    assert f"Required 'image_id' or 'cluster_label' column not found in loaded CSV: '{csv_path}'." in caplog.text
+    assert f"An unexpected error occurred while loading cluster groups from '{csv_path}'." in caplog.text
+
+
+def test_load_cluster_groups_general_exception(temp_data_root, caplog, monkeypatch):
+    """
+    GIVEN: A scenario that causes a general exception during cluster CSV processing.
+    WHEN:  load_cluster_groups is called.
+    THEN:  IOError should be raised, and an exception logged.
+    """
+    cluster_map_data = {
+        'image_id': ['imgA', 'imgB'],
+        'cluster_label': [0, 1]
+    }
+    cluster_map_path = temp_data_root / "cluster_exception_test.csv"
+    create_dummy_csv(cluster_map_path, pd.DataFrame(cluster_map_data))
+
+    # Mock pandas read_csv to raise a general exception
+    original_read_csv = pd.read_csv
+    def mock_read_csv(*args, **kwargs):
+        if str(cluster_map_path) in str(args[0]):
+            raise ValueError("Simulated cluster CSV processing error")
+        return original_read_csv(*args, **kwargs)
+    monkeypatch.setattr(pd, 'read_csv', mock_read_csv)
+
+    with pytest.raises(IOError) as excinfo:
+        load_cluster_groups(cluster_map_path)
+    assert f"Error loading cluster groups from '{cluster_map_path}': Simulated cluster CSV processing error" in str(excinfo.value)
+    assert f"An unexpected error occurred while loading cluster groups from '{cluster_map_path}'." in caplog.text
+
+
+def test_data_loader_no_marker_content_with_matching_shape(temp_data_root, subdirs_config, caplog):
+    """
+    GIVEN: A marker mask with the correct shape but all zeros (no content).
+    WHEN:  data_loader is called.
+    THEN:  No marker masking should be applied, and an INFO message logged.
+    """
+    image_id = "no_marker_content"
+    
+    create_dummy_image(temp_data_root / subdirs_config['images_subdir'] / f"{image_id}.png")
+    create_dummy_mask(temp_data_root / subdirs_config['wound_masks_subdir'] / f"{image_id}.png")
+    create_dummy_mask(temp_data_root / subdirs_config['body_mask_subdir'] / f"{image_id}.png", value=255)
+    create_dummy_depth_map(temp_data_root / subdirs_config['depth_maps_subdir'] / f"{image_id}.png", value=100)
+    
+    # Create a marker mask with correct shape but all zeros
+    marker_mask_path = temp_data_root / subdirs_config['marker_mask_subdir'] / f"{image_id}.png"
+    create_dummy_mask(marker_mask_path, shape=(100, 100), value=0)  # All zeros
+
+    loaded_data = data_loader(image_id, temp_data_root, subdirs_config)
+
+    assert loaded_data is not None
+    assert np.all(loaded_data['depth'] == 100)  # Should remain unchanged
+    assert f"Marker mask for {image_id} is all zeros/empty. No marker masking applied." in caplog.text
+
+
+def test_data_loader_all_zero_features_csv(temp_data_root, caplog):
+    """
+    GIVEN: A CSV with valid structure but all feature values are zero.
+    WHEN:  load_and_clean_features is called.
+    THEN:  Should process normally and return zero-valued features.
+    """
+    features_df_data = {
+        'image_id': ['img1', 'img2', 'img3'],
+        'feat_A': [0.0, 0.0, 0.0],
+        'feat_B': [0.0, 0.0, 0.0],
+    }
+    features_csv_path = temp_data_root / "zero_features.csv"
+    create_dummy_csv(features_csv_path, pd.DataFrame(features_df_data))
+
+    df_clean, image_ids, features = load_and_clean_features(features_csv_path)
+
+    assert isinstance(df_clean, pd.DataFrame)
+    assert len(df_clean) == 3
+    assert np.array_equal(image_ids, np.array(['img1', 'img2', 'img3']))
+    assert features.shape == (3, 2)
+    assert np.all(features == 0.0)
+    assert "Features loaded and cleaned successfully." in caplog.text
+
+
+def test_data_loader_mixed_marker_mask_scenarios(temp_data_root, subdirs_config, caplog):
+    """
+    GIVEN: Various marker mask scenarios (present with content, present without content, missing).
+    WHEN:  data_loader is called multiple times.
+    THEN:  Should handle all scenarios correctly with appropriate logging.
+    """
+    base_setup = lambda img_id: [
+        create_dummy_image(temp_data_root / subdirs_config['images_subdir'] / f"{img_id}.png"),
+        create_dummy_mask(temp_data_root / subdirs_config['wound_masks_subdir'] / f"{img_id}.png"),
+        create_dummy_mask(temp_data_root / subdirs_config['body_mask_subdir'] / f"{img_id}.png", value=255),
+        create_dummy_depth_map(temp_data_root / subdirs_config['depth_maps_subdir'] / f"{img_id}.png", value=100)
+    ]
+    
+    # Test 1: Marker mask with content
+    image_id1 = "marker_with_content"
+    base_setup(image_id1)
+    marker_mask_path1 = temp_data_root / subdirs_config['marker_mask_subdir'] / f"{image_id1}.png"
+    # Ensure the directory exists before creating the file
+    marker_mask_path1.parent.mkdir(parents=True, exist_ok=True)
+    marker_mask = np.zeros((100, 100), dtype=np.uint8)
+    marker_mask[10:20, 10:20] = 255
+    cv2.imwrite(str(marker_mask_path1), marker_mask)
+    
+    loaded_data1 = data_loader(image_id1, temp_data_root, subdirs_config)
+    assert loaded_data1 is not None
+    assert f"Marker mask applied to depth map and body mask for {image_id1}." in caplog.text
+    
+    # Test 2: Marker mask without content (all zeros)
+    image_id2 = "marker_no_content"
+    base_setup(image_id2)
+    create_dummy_mask(temp_data_root / subdirs_config['marker_mask_subdir'] / f"{image_id2}.png", value=0)
+    
+    loaded_data2 = data_loader(image_id2, temp_data_root, subdirs_config)
+    assert loaded_data2 is not None
+    assert f"Marker mask for {image_id2} is all zeros/empty. No marker masking applied." in caplog.text
+
+
+def test_data_loader_debug_logging_coverage(temp_data_root, subdirs_config, caplog):
+    """
+    GIVEN: A complete successful data loading scenario.
+    WHEN:  data_loader is called with debug logging enabled.
+    THEN:  All debug messages should be logged correctly.
+    """
+    # Set logger level to DEBUG to capture debug messages
+    logger = logging.getLogger("src.data_loader")
+    original_level = logger.level
+    logger.setLevel(logging.DEBUG)
+    
+    try:
+        image_id = "debug_test"
+        
+        create_dummy_image(temp_data_root / subdirs_config['images_subdir'] / f"{image_id}.png")
+        create_dummy_mask(temp_data_root / subdirs_config['wound_masks_subdir'] / f"{image_id}.png")
+        create_dummy_mask(temp_data_root / subdirs_config['body_mask_subdir'] / f"{image_id}.png", value=255)
+        create_dummy_depth_map(temp_data_root / subdirs_config['depth_maps_subdir'] / f"{image_id}.png", value=100)
+        
+        # Create marker mask with some content - ensure directory exists first
+        marker_mask_path = temp_data_root / subdirs_config['marker_mask_subdir'] / f"{image_id}.png"
+        marker_mask_path.parent.mkdir(parents=True, exist_ok=True)
+        marker_mask = np.zeros((100, 100), dtype=np.uint8)
+        marker_mask[10:20, 10:20] = 255
+        cv2.imwrite(str(marker_mask_path), marker_mask)
+        
+        loaded_data = data_loader(image_id, temp_data_root, subdirs_config)
+        
+        assert loaded_data is not None
+        assert f"Successfully loaded all critical files for {image_id}." in caplog.text
+        assert f"Body mask applied to depth map for {image_id}." in caplog.text
+        assert f"Marker mask applied to depth map and body mask for {image_id}." in caplog.text
+    
+    finally:
+        # Restore original logger level
+        logger.setLevel(original_level)
+
+
+def test_data_loader_individual_missing_subdir_keys(temp_data_root, caplog):
+    """
+    GIVEN: A subdirs_config missing one key at a time.
+    WHEN:  data_loader is called.
+    THEN:  ValueError should be raised for each missing key individually.
+    """
+    image_id = "test_id"
+    
+    # Test each missing key individually
+    complete_config = {
+        "images_subdir": "images",
+        "wound_masks_subdir": "wound_masks", 
+        "body_mask_subdir": "body_mask",
+        "depth_maps_subdir": "depth_maps",
+        "marker_mask_subdir": "marker_mask",
+    }
+    
+    missing_keys = ['images_subdir', 'wound_masks_subdir', 'body_mask_subdir', 
+                   'depth_maps_subdir', 'marker_mask_subdir']
+    
+    for missing_key in missing_keys:
+        # Create config missing one key
+        bad_subdirs_config = complete_config.copy()
+        del bad_subdirs_config[missing_key]
+
+        with pytest.raises(ValueError) as excinfo:
+            data_loader(image_id, temp_data_root, bad_subdirs_config)
+        assert f"Missing subdirectory configuration key in subdirs_config: '{missing_key}'" in str(excinfo.value)
+        assert f"Missing subdirectory configuration key: '{missing_key}'. Please check your subdirs_config." in caplog.text
+
+
+def test_load_and_clean_features_only_image_id_column(temp_data_root, caplog):
+    """
+    GIVEN: A CSV with only the 'image_id' column (no feature columns).
+    WHEN:  load_and_clean_features is called.
+    THEN:  Should process successfully and return empty features array.
+    """
+    features_df_data = {
+        'image_id': ['img1', 'img2', 'img3']
+    }
+    features_csv_path = temp_data_root / "only_image_id.csv"
+    create_dummy_csv(features_csv_path, pd.DataFrame(features_df_data))
+
+    df_clean, image_ids, features = load_and_clean_features(features_csv_path)
+
+    assert isinstance(df_clean, pd.DataFrame)
+    assert len(df_clean) == 3
+    assert np.array_equal(image_ids, np.array(['img1', 'img2', 'img3']))
+    assert features.shape == (3, 0)  # No feature columns
+    assert "Features loaded and cleaned successfully." in caplog.text

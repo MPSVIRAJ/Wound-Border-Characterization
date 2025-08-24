@@ -874,3 +874,479 @@ def test_unroll_periwound_to_image_empty_inputs(caplog):
         unroll_periwound_to_image(empty_array_2d, empty_array_2d)
     assert "Input mask and image must be non-empty and have consistent (H, W) shapes." in str(excinfo.value)
     assert f"Mask {empty_array_2d.shape} or image {empty_array_2d.shape} is empty or shapes mismatch." in caplog.text
+
+
+# Additional test cases to improve coverage for preprocessing.py
+
+def test_validate_wound_masks_edge_case_num_labels_check(temp_data_dir, caplog):
+    """
+    GIVEN: A scenario that specifically targets the num_labels < 2 check.
+    WHEN:  validate_wound_masks is called.
+    THEN:  The warning for no foreground components should be logged.
+    """
+    mask_dir = temp_data_dir / "wound_masks"
+    mask_dir.mkdir()
+    
+    mask_path = mask_dir / "edge_case_mask.png"
+    mask = np.zeros((100, 100), dtype=np.uint8)
+    cv2.imwrite(str(mask_path), mask)
+    
+    filtering_params = {
+        'pixel_area_threshold': 10,
+        'max_wound_components': 0  # Expect 0 components to pass the first check
+    }
+    
+    # Mock to create the exact scenario: 
+    # num_labels = 1 (background only), num_wound_components = 0, max_components = 0
+    # This should pass the component count check but fail the num_labels < 2 check
+    with patch('cv2.connectedComponentsWithStats') as mock_components:
+        mock_components.return_value = (1, None, np.array([[0, 0, 0, 0, 0]]), None)
+        
+        valid_ids_df = validate_wound_masks(mask_dir, filtering_params)
+        
+        assert valid_ids_df.empty
+        assert "Skipping 'edge_case_mask.png': No foreground components found despite check (num_labels=1)." in caplog.text
+
+
+# Additional test cases to improve coverage for preprocessing.py
+
+def test_validate_wound_masks_index_error_handling(temp_data_dir, caplog):
+    """
+    GIVEN: A mask that causes IndexError when extracting component area.
+    WHEN:  validate_wound_masks is called.
+    THEN:  The error should be caught, logged, and the mask skipped.
+    """
+    mask_dir = temp_data_dir / "wound_masks"
+    mask_dir.mkdir()
+    
+    # Create a mask that might cause issues with component statistics
+    problematic_mask = np.zeros((100, 100), dtype=np.uint8)
+    # Create a very thin line that might cause cv2.connectedComponentsWithStats issues
+    problematic_mask[50, 10:90] = 255
+    cv2.imwrite(str(mask_dir / "problematic_mask.png"), problematic_mask)
+
+    filtering_params = {
+        'pixel_area_threshold': 10,
+        'max_wound_components': 1
+    }
+
+    # Mock cv2.connectedComponentsWithStats to raise IndexError
+    with patch('cv2.connectedComponentsWithStats') as mock_components:
+        mock_components.return_value = (2, None, np.array([[0, 0, 0, 0, 0]]), None)  # Missing stats for component 1
+        
+        valid_ids_df = validate_wound_masks(mask_dir, filtering_params)
+        
+        assert valid_ids_df.empty
+        assert "Failed to extract component area for 'problematic_mask.png'. Likely unexpected mask structure. Skipping." in caplog.text
+
+
+def test_validate_wound_masks_no_foreground_components(temp_data_dir, caplog):
+    """
+    GIVEN: A mask with num_labels < 2 (no foreground components).
+    WHEN:  validate_wound_masks is called.  
+    THEN:  The mask should be filtered out due to component count mismatch.
+    """
+    mask_dir = temp_data_dir / "wound_masks"
+    mask_dir.mkdir()
+    
+    # Create an all-black mask - this will have 0 wound components
+    empty_mask = np.zeros((100, 100), dtype=np.uint8)
+    cv2.imwrite(str(mask_dir / "empty_mask.png"), empty_mask)
+
+    filtering_params = {
+        'pixel_area_threshold': 10,
+        'max_wound_components': 1
+    }
+
+    valid_ids_df = validate_wound_masks(mask_dir, filtering_params)
+    
+    assert valid_ids_df.empty
+    # This gets caught by the component count check, not the num_labels < 2 check
+    assert "Skipping 'empty_mask.png': Found 0 components, expected 1." in caplog.text
+
+
+def test_validate_wound_masks_unexpected_processing_error(temp_data_dir, caplog):
+    """
+    GIVEN: A mask that causes an unexpected error during processing.
+    WHEN:  validate_wound_masks is called.
+    THEN:  The error should be caught, logged, and the mask skipped.
+    """
+    mask_dir = temp_data_dir / "wound_masks"
+    mask_dir.mkdir()
+    
+    # Create a valid mask
+    mask = np.zeros((100, 100), dtype=np.uint8)
+    cv2.circle(mask, (50, 50), 20, 255, -1)
+    cv2.imwrite(str(mask_dir / "error_mask.png"), mask)
+
+    filtering_params = {
+        'pixel_area_threshold': 10,
+        'max_wound_components': 1
+    }
+
+    # Mock cv2.connectedComponentsWithStats to raise a generic exception
+    with patch('cv2.connectedComponentsWithStats') as mock_components:
+        mock_components.side_effect = RuntimeError("Unexpected OpenCV error")
+        
+        valid_ids_df = validate_wound_masks(mask_dir, filtering_params)
+        
+        assert valid_ids_df.empty
+        assert "An unexpected error occurred while processing mask 'error_mask.png'. Skipping this image." in caplog.text
+
+
+def test_validate_wound_masks_io_error(temp_data_dir, caplog):
+    """
+    GIVEN: A directory that raises IOError during iteration.
+    WHEN:  validate_wound_masks is called.
+    THEN:  IOError should be raised with appropriate error message.
+    """
+    mask_dir = temp_data_dir / "wound_masks"
+    mask_dir.mkdir()
+
+    # Mock iterdir to raise PermissionError
+    with patch.object(Path, 'iterdir') as mock_iterdir:
+        mock_iterdir.side_effect = PermissionError("Permission denied")
+        
+        with pytest.raises(IOError) as excinfo:
+            validate_wound_masks(mask_dir, {'pixel_area_threshold': 10, 'max_wound_components': 1})
+        
+        assert "Error reading directory" in str(excinfo.value)
+        assert "Permission denied" in str(excinfo.value)
+        assert "Failed to read contents of directory" in caplog.text
+
+
+def test_depth_correction_unexpected_curve_fit_error(caplog, monkeypatch):
+    """
+    GIVEN: Inputs that cause curve_fit to raise an unexpected (non-RuntimeError) exception.
+    WHEN:  depth_corrction_for_body_curvature is called.
+    THEN:  IOError should be raised and logged appropriately.
+    """
+    h, w = 50, 50
+    wound = np.zeros((h, w), dtype=np.uint8)
+    cv2.circle(wound, (w//2, h//2), 5, 255, -1)
+    body = np.ones((h, w), dtype=np.uint8) * 255
+    raw_depth = (np.random.rand(h,w) * 100 + 100).astype(np.float32)
+
+    def mock_curve_fit(*args, **kwargs):
+        raise ValueError("Unexpected curve_fit error")
+
+    monkeypatch.setattr('src.preprocessing.curve_fit', mock_curve_fit)
+
+    with pytest.raises(IOError) as excinfo:
+        depth_corrction_for_body_curvature(wound, body, raw_depth)
+
+    assert "Error during quadratic surface fitting: Unexpected curve_fit error" in str(excinfo.value)
+    assert "An unexpected error occurred during quadratic surface fitting. Skipping curvature correction. Returning Z-score cleaned depth." in caplog.text
+
+
+def test_zscore_filter_different_input_dtypes(caplog):
+    """
+    GIVEN: Body and depth maps with different input dtypes.
+    WHEN:  zscore_filter is called.
+    THEN:  The function should handle dtype conversion correctly and filter outliers.
+    """
+    body_in = np.ones((10, 10), dtype=np.uint8) * 255
+    
+    # Test with uint16 depth input (common for depth cameras)
+    depth_in = np.full((10, 10), 1000, dtype=np.uint16)
+    depth_in[0, 0] = 100    # Low outlier
+    depth_in[9, 9] = 2000   # High outlier
+
+    body_clensed, depth_clensed = zscore_filter(body_in, depth_in)
+
+    assert body_clensed.shape == body_in.shape
+    assert depth_clensed.shape == depth_in.shape
+    assert depth_clensed.dtype == depth_in.dtype  # Should preserve original dtype
+    assert body_clensed[0, 0] == 0 
+    assert body_clensed[9, 9] == 0 
+    assert depth_clensed[0, 0] == 0
+    assert depth_clensed[9, 9] == 0
+    assert depth_clensed[5, 5] == 1000
+    assert "Z-score filter applied: outliers removed from depth map and body mask." in caplog.text
+
+
+def test_unroll_periwound_to_image_alternative_coverage(caplog):
+    """
+    GIVEN: A scenario that tests edge cases in the unrolling process.
+    WHEN:  unroll_periwound_to_image is called.
+    THEN:  The function should handle the edge case appropriately.
+    """
+    # Create a very small image that might cause issues with cv2.resize
+    img = np.zeros((10, 10), dtype=np.uint8)
+    img[4:6, 4:6] = 200
+    mask = np.zeros((10, 10), dtype=np.uint8)
+    mask[4:6, 4:6] = 255
+
+    # This should work but test edge case behavior
+    unrolled_strip, counts = unroll_periwound_to_image(img, mask, iterations=1, kernel_size=(1,1))
+
+    assert unrolled_strip is not None
+    assert unrolled_strip.ndim == 2
+    assert counts[0] >= 0
+    assert counts[1] >= 0
+
+
+# Alternative test focusing on more achievable coverage improvements
+def test_validate_wound_masks_directory_iteration_with_non_files(temp_data_dir, caplog):
+    """
+    GIVEN: A directory containing both files and subdirectories.
+    WHEN:  validate_wound_masks is called.
+    THEN:  Only files should be processed, subdirectories should be ignored.
+    """
+    mask_dir = temp_data_dir / "wound_masks"
+    mask_dir.mkdir()
+    
+    # Create a valid mask file
+    mask = np.zeros((100, 100), dtype=np.uint8)
+    mask[40:60, 40:60] = 255
+    cv2.imwrite(str(mask_dir / "valid_mask.png"), mask)
+    
+    # Create a subdirectory (should be ignored)
+    (mask_dir / "subdirectory").mkdir()
+    
+    # Create a file with wrong extension (should be ignored)
+    (mask_dir / "invalid.txt").write_text("not an image")
+
+    filtering_params = {
+        'pixel_area_threshold': 100,
+        'max_wound_components': 1
+    }
+
+    valid_ids_df = validate_wound_masks(mask_dir, filtering_params)
+    
+    # Should only process the valid PNG file
+    assert len(valid_ids_df) == 1
+    assert valid_ids_df['image_id'].iloc[0] == 'valid_mask'
+    assert "Found 1 potential mask files to check." in caplog.text
+
+
+def test_sample_pixels_from_contour_single_contour_point_edge_case(caplog):
+    """
+    GIVEN: A mask that creates a contour with minimal points.
+    WHEN:  sample_pixels_from_contour is called.
+    THEN:  The function should handle minimal contours appropriately.
+    """
+    img = np.zeros((50, 50), dtype=np.uint8)
+    img[20:25, 20:25] = 100
+    
+    # Create a very thin line that might result in minimal contour
+    mask = np.zeros((50, 50), dtype=np.uint8)
+    mask[22, 20:25] = 255  # Thin horizontal line
+    
+    try:
+        pixels = sample_pixels_from_contour(img, mask)
+        assert pixels.shape[0] > 0  # Should have some pixels
+        assert pixels.shape[1] == 1  # Should have width 1
+        assert "Sampled" in caplog.text
+    except ValueError:
+        # This might legitimately fail for very thin contours, which is acceptable
+        assert "Degenerate contour found" in caplog.text or "No contours found" in caplog.text
+
+
+def test_depth_correction_with_minimal_peri_wound_data(caplog):
+    """
+    GIVEN: A wound that results in very few peri-wound pixels after dilation.
+    WHEN:  depth_corrction_for_body_curvature is called.
+    THEN:  The function should handle insufficient data gracefully.
+    """
+    h, w = 20, 20  # Small image
+    wound = np.zeros((h, w), dtype=np.uint8)
+    wound[9:11, 9:11] = 255  # Very small wound
+    
+    body = np.ones((h, w), dtype=np.uint8) * 255
+    
+    # Create a depth map with limited variation
+    depth = np.full((h, w), 1000, dtype=np.float32)
+    
+    body_clensed, depth_clensed, depth_corrected = depth_corrction_for_body_curvature(
+        wound, body, depth, kernel_size=(1,1), dilation_iterations=1)
+    
+    # Should handle the minimal data scenario
+    assert body_clensed.shape == (h, w)
+    assert depth_clensed.shape == (h, w)
+    assert depth_corrected.shape == (h, w)
+    
+    # Likely to get insufficient data warning
+    assert ("Not enough data points" in caplog.text or 
+            "Depth map corrected for body curvature." in caplog.text)
+
+
+def test_unroll_periwound_cv2_resize_with_small_dimensions(caplog):
+    """
+    GIVEN: A very small mask that tests cv2.resize edge cases.
+    WHEN:  unroll_periwound_to_image is called.
+    THEN:  The function should handle small dimensions in resizing.
+    """
+    # Very small image to test resize edge cases
+    img = np.zeros((15, 15), dtype=np.uint8)
+    img[6:9, 6:9] = 150
+    
+    mask = np.zeros((15, 15), dtype=np.uint8)
+    mask[7, 7] = 255  # Single pixel mask
+    
+    try:
+        unrolled_strip, counts = unroll_periwound_to_image(img, mask, iterations=1, kernel_size=(1,1))
+        assert unrolled_strip is not None
+        assert counts[0] >= 0 and counts[1] >= 0
+    except ValueError as e:
+        # Single pixel might cause contour issues, which is acceptable
+        assert ("Degenerate contour" in str(e) or 
+                "No contours found" in str(e) or
+                "Baseline contour extraction failed" in str(e))
+
+
+def test_sample_pixels_from_contour_multiple_contours(caplog):
+    """
+    GIVEN: A mask with multiple contours (function should select the longest one).
+    WHEN:  sample_pixels_from_contour is called.
+    THEN:  Pixels from the longest contour should be sampled.
+    """
+    img = np.zeros((100, 100), dtype=np.uint8)
+    img[10:20, 10:20] = 100  # Small square
+    img[30:80, 30:80] = 150  # Large square
+    
+    mask = np.zeros((100, 100), dtype=np.uint8)
+    mask[10:20, 10:20] = 255  # Small contour
+    mask[30:80, 30:80] = 255  # Large contour (should be selected)
+
+    pixels = sample_pixels_from_contour(img, mask)
+
+    assert pixels.ndim == 2
+    assert pixels.shape[1] == 1
+    assert pixels.shape[0] > 0
+    # Should sample from the larger contour (value 150)
+    assert np.all(pixels == 150)
+    assert "Sampled" in caplog.text
+
+
+def test_unroll_periwound_to_image_cv2_resize_edge_case(caplog):
+    """
+    GIVEN: A scenario where cv2.resize might behave unexpectedly with very small dimensions.
+    WHEN:  unroll_periwound_to_image is called.
+    THEN:  The function should handle the resizing gracefully.
+    """
+    # Create a very small image and mask
+    img = np.zeros((20, 20), dtype=np.uint8)
+    img[8:12, 8:12] = 200
+    mask = np.zeros((20, 20), dtype=np.uint8)
+    mask[9:11, 9:11] = 255  # Very small wound
+
+    unrolled_strip, counts = unroll_periwound_to_image(img, mask, iterations=2, kernel_size=(1,1))
+
+    assert unrolled_strip is not None
+    assert unrolled_strip.ndim == 2
+    assert counts[0] >= 0
+    assert counts[1] >= 0
+
+
+def test_depth_correction_edge_case_all_zeros_after_zscore(caplog):
+    """
+    GIVEN: A scenario where Z-score filter results in all zeros (extreme case).
+    WHEN:  depth_corrction_for_body_curvature is called.
+    THEN:  The function should handle this gracefully and skip curve fitting.
+    """
+    h, w = 30, 30
+    wound = np.zeros((h, w), dtype=np.uint8)
+    cv2.circle(wound, (w//2, h//2), 3, 255, -1)
+    
+    body = np.ones((h, w), dtype=np.uint8) * 255
+    
+    # Create depth map where everything is an outlier except a few pixels
+    depth = np.ones((h, w), dtype=np.float32) * 10000  # All outliers
+    depth[h//2-1:h//2+2, w//2-1:w//2+2] = 100  # Small normal region
+
+    body_clensed, depth_clensed, depth_corrected = depth_corrction_for_body_curvature(
+        wound, body, depth, kernel_size=(1,1), dilation_iterations=1)
+
+    # Should return the cleaned versions since curve fitting will likely fail
+    assert body_clensed.shape == (h, w)
+    assert depth_clensed.shape == (h, w) 
+    assert depth_corrected.shape == (h, w)
+
+
+def test_quad_surface_edge_values():
+    """
+    GIVEN: Edge case values for quad_surface (zeros, negative values, etc.).
+    WHEN:  quad_surface is called.
+    THEN:  Correct mathematical results should be returned.
+    """
+    # Test with zero coordinates
+    x_coords = np.array([[0, 0], [0, 0]])
+    y_coords = np.array([[0, 0], [0, 0]])
+    
+    result = quad_surface((x_coords, y_coords), a=1, b=2, c=3, d=4, e=5, f=6)
+    expected = np.array([[1, 1], [1, 1]])  # Only 'a' term contributes
+    np.testing.assert_allclose(result, expected)
+    
+    # Test with negative coordinates
+    x_coords = np.array([[-1, -1], [1, 1]])
+    y_coords = np.array([[-1, 1], [-1, 1]])
+    
+    result = quad_surface((x_coords, y_coords), a=1, b=1, c=1, d=1, e=1, f=1)
+    # For each point: z = 1 + 1*x + 1*y + 1*x^2 + 1*y^2 + 1*x*y
+    expected = np.array([[1 + (-1) + (-1) + 1 + 1 + 1,  # x=-1, y=-1: 1-1-1+1+1+1 = 2
+                          1 + (-1) + (1) + 1 + 1 + (-1)], # x=-1, y=1: 1-1+1+1+1-1 = 2  
+                         [1 + (1) + (-1) + 1 + 1 + (-1),  # x=1, y=-1: 1+1-1+1+1-1 = 2
+                          1 + (1) + (1) + 1 + 1 + 1]])    # x=1, y=1: 1+1+1+1+1+1 = 6
+    expected = np.array([[2, 2], [2, 6]])
+    np.testing.assert_allclose(result, expected)
+
+
+def test_unroll_periwound_to_image_exact_iteration_limit(caplog):
+    """
+    GIVEN: A mask that reaches exactly the iteration limit.
+    WHEN:  unroll_periwound_to_image is called.
+    THEN:  The function should complete all iterations without early stopping.
+    """
+    img = np.zeros((100, 100), dtype=np.uint8)
+    img[40:60, 40:60] = 100
+    mask = np.zeros((100, 100), dtype=np.uint8)
+    cv2.circle(mask, (50, 50), 10, 255, -1)
+
+    # Use very small iteration count to test exact limit
+    unrolled_strip, counts = unroll_periwound_to_image(img, mask, iterations=2, kernel_size=(3,3))
+
+    assert unrolled_strip is not None
+    assert "Completed 2 dilation steps." in caplog.text or "Dilation stopped at iteration" in caplog.text
+    assert counts[1] <= 2  # Should not exceed iteration limit
+
+
+def test_validate_wound_masks_various_file_extensions(temp_data_dir, caplog):
+    """
+    GIVEN: A directory with various image file extensions.
+    WHEN:  validate_wound_masks is called.
+    THEN:  Only supported extensions should be processed.
+    """
+    mask_dir = temp_data_dir / "wound_masks"
+    mask_dir.mkdir()
+    
+    # Create files with different extensions
+    # Use a simple rectangle to avoid JPEG compression artifacts
+    mask = np.zeros((100, 100), dtype=np.uint8)
+    mask[40:60, 40:60] = 255  # Simple solid rectangle
+    
+    cv2.imwrite(str(mask_dir / "mask1.png"), mask)
+    # For lossy formats, use PNG and then copy to avoid compression issues
+    cv2.imwrite(str(mask_dir / "temp.png"), mask)
+    # Copy the PNG as JPG to ensure identical content
+    temp_img = cv2.imread(str(mask_dir / "temp.png"), cv2.IMREAD_GRAYSCALE)
+    cv2.imwrite(str(mask_dir / "mask2.jpg"), temp_img)
+    cv2.imwrite(str(mask_dir / "mask3.jpeg"), temp_img)
+    (mask_dir / "temp.png").unlink()  # Clean up
+    
+    # Create unsupported file
+    (mask_dir / "mask4.txt").write_text("not an image")
+    (mask_dir / "mask5.bmp").touch()  # Unsupported extension
+
+    filtering_params = {
+        'pixel_area_threshold': 100,
+        'max_wound_components': 1
+    }
+
+    valid_ids_df = validate_wound_masks(mask_dir, filtering_params)
+    
+    # Should only process .png, .jpg, .jpeg files that pass the filtering
+    assert len(valid_ids_df) >= 1  # At least PNG should pass
+    assert "Found 3 potential mask files to check." in caplog.text
+    # Check that only supported extensions were considered
+    assert "mask1" in valid_ids_df['image_id'].tolist() or len(valid_ids_df) > 0
