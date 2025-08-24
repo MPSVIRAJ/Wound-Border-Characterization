@@ -24,3 +24,10 @@ dist/
 
 # Ignore the Sphinx documentation build output
 docs/build/
+
+# Log files
+*.log
+
+# Coverage data
+.coverage
+.coverage.*
