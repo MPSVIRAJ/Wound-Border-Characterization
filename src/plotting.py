@@ -26,7 +26,7 @@ Typical Use:
     requiring manual interaction.
 """
 import matplotlib
-matplotlib.use('TkAgg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
@@ -42,12 +42,12 @@ import cv2
 logger = logging.getLogger(__name__)
 
 
-def plot_initial_data(image: np.ndarray, wound_mask: np.ndarray, body_mask: np.ndarray, depth_map: np.ndarray):
+def plot_initial_data(image: np.ndarray, wound_mask: np.ndarray, body_mask: np.ndarray, depth_map: np.ndarray, save_path: Optional[Path] = None):
     """
-    Displays the raw RGB image, wound mask, body mask, and depth map in a grid.
+    Creates and saves a grid plot of the raw input data.
 
-    This is an inspection utility to visually validate that the initial data
-    has been loaded correctly.
+    This utility visualizes the initial data for a single sample, including the
+    RGB image, wound mask, body mask, and depth map.
 
     Args:
         image (np.ndarray): 
@@ -58,6 +58,9 @@ def plot_initial_data(image: np.ndarray, wound_mask: np.ndarray, body_mask: np.n
             The loaded body mask.
         depth_map (np.ndarray): 
             The loaded depth map.
+        save_path (Optional[Path], optional): 
+            The full path to save the plot. If None, the plot is not saved.
+            Defaults to None.
 
     Returns:
         None
@@ -71,8 +74,8 @@ def plot_initial_data(image: np.ndarray, wound_mask: np.ndarray, body_mask: np.n
     Output:
         - Log: 
             A debug message is logged upon successful plotting.
-        - Display: 
-            A matplotlib window displaying the plots.
+        - File:
+            A PNG file of the plot at `save_path`.
 
     Examples:
         >>> import numpy as np
@@ -101,18 +104,24 @@ def plot_initial_data(image: np.ndarray, wound_mask: np.ndarray, body_mask: np.n
     axes[1, 1].imshow(depth_map, cmap='viridis')
     axes[1, 1].set_title("Depth Map")
     plt.tight_layout()
-    plt.show()
-    logger.debug("Initial data plot displayed.")
+    
+    if save_path:
+        try:
+            save_path.parent.mkdir(parents=True, exist_ok=True)
+            fig.savefig(str(save_path), dpi=150, bbox_inches='tight')
+            logger.info(f"Plot saved to {save_path}")
+        except Exception as e:
+            logger.error(f"Failed to save plot to {save_path}: {e}")
+    plt.close(fig)
 
 
 def show_unrolled_strip(rect_depth: np.ndarray, unrolled_image: np.ndarray,
-                         d1: int, p1: int, iterations: int):
+                         d1: int, p1: int, iterations: int, save_path: Optional[Path] = None):
     """
-    Visualizes the rectified depth profile and corresponding RGB image.
+    Creates and saves a plot of the rectified depth and RGB strips.
 
-    This function displays the unrolled depth strip and the corresponding RGB image
-    in a side-by-side view. It highlights the wound border and the width of the
-    unrolled strip.
+    This function visualizes the output of the periwound unrolling process,
+    displaying the depth and RGB data in a standardized rectangular format.
 
     Args:
         rect_depth (np.ndarray): 
@@ -125,6 +134,9 @@ def show_unrolled_strip(rect_depth: np.ndarray, unrolled_image: np.ndarray,
             The position of the wound border in the RGB image.
         iterations (int): 
             The number of erosion/dilation steps.
+        save_path (Optional[Path], optional): 
+            The full path to save the plot. If None, the plot is not saved.
+            Defaults to None.
 
     Returns:
         None
@@ -136,8 +148,8 @@ def show_unrolled_strip(rect_depth: np.ndarray, unrolled_image: np.ndarray,
     Output:
         - Log:
             A debug message is logged upon successful plotting.
-        - Display:
-            A matplotlib window displaying the plots.
+        - File:
+            A png file save in the given save_path.
 
     Examples:
         >>> import numpy as np
@@ -162,15 +174,21 @@ def show_unrolled_strip(rect_depth: np.ndarray, unrolled_image: np.ndarray,
     ax2.set_title("Rectified RGB Strip")
     plt.suptitle(f"Unrolled Strips with {iterations} Iterations")
     plt.tight_layout()
-    plt.show()
-    logger.debug("Unrolled strips plot displayed.")
+
+    if save_path:
+        try:
+            save_path.parent.mkdir(parents=True, exist_ok=True)
+            fig.savefig(str(save_path), dpi=150, bbox_inches='tight')
+            logger.info(f"Plot saved to {save_path}")
+        except Exception as e:
+            logger.error(f"Failed to save plot to {save_path}: {e}")
+    plt.close(fig)
 
 
 # Visualize the mean depth profile with its standard deviation
-def plot_depth_profile(mean_profile: np.ndarray, std_profile: np.ndarray, d1: int):
+def plot_depth_profile(mean_profile: np.ndarray, std_profile: np.ndarray, d1: int, save_path: Optional[Path] = None):
     """
-    Visualizes the raw mean depth profile with its standard deviation and the
-    estimated wound border position.
+    Creates and saves a line plot of the raw mean depth profile.
 
     This function creates a line plot of the mean depth profile, and uses a shaded
     area to represent the standard deviation across the strip. It also adds a vertical
@@ -183,6 +201,9 @@ def plot_depth_profile(mean_profile: np.ndarray, std_profile: np.ndarray, d1: in
             A 1D array of the standard deviation profile.
         d1 (int): 
             The index of the wound edge (the baseline contour).
+        save_path (Optional[Path], optional): 
+            The full path to save the plot. If None, the plot is not saved.
+            Defaults to None.
 
     Returns:
         None
@@ -196,8 +217,8 @@ def plot_depth_profile(mean_profile: np.ndarray, std_profile: np.ndarray, d1: in
     Output:
         - Log:
             A debug message is logged upon successful plotting.
-        - Display:
-            A matplotlib window displaying the plots.
+        - File:
+            A PNG file of the plot at `save_path`.
 
     Examples:
         >>> import numpy as np
@@ -230,18 +251,22 @@ def plot_depth_profile(mean_profile: np.ndarray, std_profile: np.ndarray, d1: in
     ax.legend()
     ax.grid(True, linestyle='--', alpha=0.6)
     
-    plt.show()
-    logger.debug("Depth profile plot displayed.")
-
+    if save_path:
+        try:
+            save_path.parent.mkdir(parents=True, exist_ok=True)
+            fig.savefig(str(save_path), dpi=150, bbox_inches='tight')
+            logger.info(f"Plot saved to {save_path}")
+        except Exception as e:
+            logger.error(f"Failed to save plot to {save_path}: {e}")
     plt.close(fig)
 
 
 # Visualizing feature fits on the mean depth profile
 def plot_profiles_and_fits(mean_profile: np.ndarray, std_profile: np.ndarray,
                            smoothed_profile: np.ndarray, features: Dict[str, Any],
-                           d1: int, p1: int, transition_width: int):
+                           d1: int, p1: int, transition_width: int, save_path: Optional[Path] = None):
     """
-    Plots the mean and std deviation profiles, the smoothed profile, and the curve fits.
+    Creates and saves a plot of the depth profile and its piecewise curve fits.
 
     This function visualizes the core output of the feature extraction module, showing
     how the linear and sigmoid functions fit the smoothed depth profile across the
@@ -262,6 +287,9 @@ def plot_profiles_and_fits(mean_profile: np.ndarray, std_profile: np.ndarray,
             A redundant parameter (likely from original code), but kept for consistency.
         transition_width (int): 
             The width of the edge transition region.
+        save_path (Optional[Path], optional): 
+            The full path to save the plot. If None, the plot is not saved.
+            Defaults to None.
 
     Returns:
         None
@@ -274,8 +302,8 @@ def plot_profiles_and_fits(mean_profile: np.ndarray, std_profile: np.ndarray,
     Output:
         - Log:
             A debug message is logged upon successful plotting.
-        - Display:
-            A matplotlib window displaying the plots.
+        - File:
+            A PNG file of the plot at `save_path`.
 
     Examples:
         >>> import numpy as np
@@ -354,9 +382,13 @@ def plot_profiles_and_fits(mean_profile: np.ndarray, std_profile: np.ndarray,
     ax.grid(False)
     ax.set_xlim(20, 170)
     
-    plt.show()
-    logger.debug("Piecewise curve fits plot displayed.")
-
+    if save_path:
+        try:
+            save_path.parent.mkdir(parents=True, exist_ok=True)
+            fig.savefig(str(save_path), dpi=150, bbox_inches='tight')
+            logger.info(f"Plot saved to {save_path}")
+        except Exception as e:
+            logger.error(f"Failed to save plot to {save_path}: {e}")
     plt.close(fig)
 
         
@@ -505,7 +537,7 @@ def plot_clusters(embedding: np.ndarray, cluster_labels: np.ndarray, save_path: 
         logger.exception(f"Failed to save HDBSCAN clusters plot to {save_path}.")
         raise IOError(f"Failed to save plot: {e}") from e
     finally:
-        plt.show()
+        plt.close(fig)
 
 # Plotting feature distribution box plots
 def plot_feature_distributions_by_cluster(df: pd.DataFrame, features_to_plot: List[str], save_path: Path):
