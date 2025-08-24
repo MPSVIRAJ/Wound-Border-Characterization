@@ -163,13 +163,16 @@ def run_feature_extraction_step(config: Config, paths: Dict[str, Path], image_id
     """
     feature_params = config.get_feature_extraction_params()
     comprehensive_features_csv = paths['comprehensive_features_csv']
+    output_dir = paths['base_output_dir']
 
     logger.info("Starting feature extraction.")
     for image_id in tqdm(image_ids_to_process, desc="Processing Images"):
         try:
             loaded_data = data_loader(image_id, paths['base_data_dir'], config.get_subdirs_params())
             if loaded_data is None: continue
-            if single_image_mode: plot_initial_data(loaded_data['image'], loaded_data['wound'], loaded_data['body'], loaded_data['depth'])
+            if single_image_mode: 
+                plot_save_path = output_dir / f"{image_id}_initial_data.png"
+                plot_initial_data(loaded_data['image'], loaded_data['wound'], loaded_data['body'], loaded_data['depth'], save_path=plot_save_path)
             
             _, _, depth_corrected = depth_corrction_for_body_curvature(loaded_data['wound'], loaded_data['body'], loaded_data['depth'])
             depth_corrected_nan = np.where(depth_corrected != 0, depth_corrected, np.nan)
@@ -178,7 +181,8 @@ def run_feature_extraction_step(config: Config, paths: Dict[str, Path], image_id
             
             if single_image_mode:
                 rect_rgb, (_, p1) = unroll_periwound_to_image(loaded_data['image'], loaded_data['wound'], iterations=feature_params['unroll_iterations'])
-                show_unrolled_strip(rect_depth, rect_rgb, d1, p1, feature_params['unroll_iterations'])
+                plot_save_path = output_dir / f"{image_id}_unrolled_strip.png"
+                show_unrolled_strip(rect_depth, rect_rgb, d1, p1, feature_params['unroll_iterations'],save_path=plot_save_path)
             
             mean_prof, std_profile = calculate_depth_profiles(rect_depth)
             if single_image_mode: plot_depth_profile(mean_prof, std_profile, d1)
@@ -190,7 +194,8 @@ def run_feature_extraction_step(config: Config, paths: Dict[str, Path], image_id
             features, smoothed_profile, success = extract_features_from_profile(mean_prof, d1, feature_params)
             
             if single_image_mode and success:
-                plot_profiles_and_fits(mean_prof, std_profile, smoothed_profile, features, d1, d1, feature_params['transition_width'])
+                plot_save_path = output_dir / f"{image_id}_depth_profile_with_fits.png"
+                plot_profiles_and_fits(mean_prof, std_profile, smoothed_profile, features, d1, d1, feature_params['transition_width'], save_path=plot_save_path)
             
             if success:
                 save_features_to_csv(image_id, features, comprehensive_features_csv)
@@ -445,7 +450,7 @@ def main():
         
         run_feature_extraction_step(config, paths, image_ids_to_process, single_image_mode=(args.image_id is not None))
         if args.image_id:
-            logger.info("Single image processing complete. Displaying plots.")
+            logger.info("Single image processing complete. Plots saved to 'outputs' directory.")
             plt.show()
 
     if args.stage == 'cluster':
