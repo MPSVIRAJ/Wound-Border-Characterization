@@ -1,35 +1,107 @@
 # Wound Border Characterization
-**Quantitative 3D Depth-Based Analysis and Machine Learning-Based Classification of Chronic Wound Borders**
 
-Wound Border Characterization is a fully automated pipeline developed under a novel method to classify wound border types using a large set of quantitative features extracted from wound borders in 3D depth maps.
-The pipeline includes three core functionalities:
-- Quantitative Feature Extraction
-- Unsupervised Edge Type Discovery
-- Automated Classification
-This project can be used in two ways: as a complete pipeline to train a new classification model on a custom dataset, or as a standalone tool to classify wounds using the included pre-trained model.
 
-## 🧬 Pipeline Workflow
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.10-blue?style=for-the-badge&logo=python" alt="Python 3.10">
+  <img src="https://img.shields.io/badge/Coverage-99%25-brightgreen?style=for-the-badge&logo=codecov" alt="Test Coverage">
+  <a href="https://mpsviraj.github.io/Wound-Border-Characterization/index.html"><img src="https://img.shields.io/badge/Documentation-View-blue?style=for-the-badge" alt="Documentation"></a>
+  <a href="https://github.com/MPSVIRAJ/Wound-Border-Characterization/blob/main/License"><img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="License: MIT"></a>
+</p>
+<p align="center">
+  A innovative automated pipeline for quantitative 3D analysis and machine learning-based classification of chronic wound border morphology using depth map data.
+</p>
 
-The project is structured as an end-to-end pipeline that processes raw 3D image data to produce a final classification. The diagram below illustrates the major stages of this process.
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li>
+      <a href="#about-the-project">About The Project</a>
+      <ul>
+        <li><a href="#the-approach">The Approach</a></li>
+        <li><a href="#dual-purpose-design">Dual Purpose Design</a></li>
+        <li><a href="#key-benefits">Key Benefits</a></li>
+        <li><a href="#key-features">Key Features</a></li>
+        <li><a href="#built-with">Built With</a></li>
+      </ul>
+    </li>
+    <li><a href="#pipeline-workflow">Pipeline Workflow</a></li>
+    <li>
+      <a href="#the-dataset">The Dataset</a>
+      <ul>
+        <li><a href="#using-your-own-data">Using Your Own Data</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#getting-started">Getting Started</a>
+      <ul>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#installation">Installation</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#usage">Usage</a>
+      <ul>
+        <li><a href="#use-case-1-classifying-new-wounds-with-the-pre-trained-model">Use Case 1: Classifying New Wounds with the Pre-trained Model</a></li>
+        <li><a href="#use-case-2-evaluating-the-original-machine-learning-results">Use Case 2: Evaluating the Original Machine Learning Results</a></li>
+        <li><a href="#use-case-3-training-a-new-model-on-a-custom-dataset">Use Case 3: Training a New Model on a Custom Dataset</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#tests">Tests</a>
+      <ul>
+        <li><a href="#running-the-test-suite">Running the Test Suite</a></li>
+        <li><a href="#testing-scope">Testing Scope</a></li>
+      </ul>
+    </li>
+    <li><a href="#documentation">Documentation</a></li>
+    <li>
+      <a href="#limitations">Limitations</a>
+      <ul>
+        <li><a href="#technical--data-format-limitations">Technical & Data Format Limitations</a></li>
+        <li><a href="#scientific--methodological-limitations">Scientific & Methodological Limitations</a></li>
+        <li><a href="#project-scope-limitations">Project Scope Limitations</a></li>
+      </ul>
+    </li>
+    <li><a href="#license">License</a></li>
+    <li><a href="#contact">Contact</a></li>
+    <li><a href="#acknowledgments">Acknowledgments</a></li>
+  </ol>
+</details>
 
-![Wound Border Characterization Pipeline](docs/source//process.png)
-*Figure 1: The complete pipeline, from initial data preprocessing and feature extraction to unsupervised clustering for label discovery and final supervised classification for prediction.*
+## About The Project
 
-### A Note on Classification Labels
-Please note that the classification labels used to train the model (e.g., "Shallow Bed, Gentle Slope") are not clinically verified. They were generated in a data-driven manner from the unsupervised clustering step based on statistical similarities in the wound geometry.
+Chronic wound assessment traditionally relies on subjective clinical evaluation, leading to inconsistent assessments and difficulty tracking healing progress. This project presents a innovative method that transforms wound border analysis from qualitative observation to quantitative measurement using 3D depth map technology and automated machine learning.
 
-The primary goal of this project is to provide a robust framework for this type of analysis. Users can easily adapt the pipeline to use their own clinically verified labels by modifying the `DescriptiveLabels` section in the `config.json` file.
+### The Approach
+This method introduces the a comprehensive framework for:
 
+* **Quantitative Feature Extraction:** Extracts 28 geometric and statistical features from 3D wound border depth maps
+* **Unsupervised Classification:** Discovers natural wound categories through advanced clustering algorithms
+* **Automated Prediction:** Classifies new wounds using trained machine learning models
+
+### Dual Purpose Design
+This pipeline serves two primary applications:
+
+* **Educational Tool:** Complete step-by-step pipeline to learn and understand the entire wound analysis process, from raw data to final classification
+* **Clinical Application:** Ready-to-use classification system with pre-trained models for immediate wound assessment
+
+### Key Benefits
+
+* Objective, reproducible wound assessments replacing subjective evaluation
+* Educational framework with comprehensive documentation and visual outputs
+* Flexible implementation: complete training pipeline or standalone classification tool
+* Standardized wound classification methodology for clinical and research settings
+
+This groundbreaking approach enables both learning the methodology and implementing practical wound assessment solutions for healthcare providers and researchers.
 
 ### Key features
 * **Fully Documented:** The entire codebase is commented and includes detailed docstrings for all modules and functions.
 * **End-to-End Pipeline:** Includes modules for preprocessing, quantitative feature extraction, clustering, classification, and visualization.
-* **Thoroughly Tested:** A comprehensive suite of unit tests ensures code reliability, achieving over 90% coverage on core application logic.
+* **Thoroughly Tested:** A comprehensive suite of unit tests ensures code reliability, achieving 99% coverage on core application logic.
 * **CLI Controllable:** A robust command-line interface allows for easy execution of any individual pipeline stage (`extract`, `cluster`, `train`, `predict`) or the full sequence.
-* **Interactive Visualization:** The pipeline generates interactive Matplotlib plots at key processing stages, allowing for an in-depth visual analysis of intermediate and final results.
+* **Detailed Visual Outputs:** The pipeline generates Matplotlib plots at key processing stages and save them in 'outputs/' directory, allowing for in depth visual analysis.
 
 ### Built With
-
 This project was built using the following major libraries and frameworks:
 
 * [Python](https://www.python.org/) - Core programming language
@@ -41,7 +113,19 @@ This project was built using the following major libraries and frameworks:
 * [Seaborn](https://seaborn.pydata.org/) - Statistical data visualization
 * [Pytest](https://pytest.org/) - Testing framework and coverage reporting
 
-## 📊 The Dataset
+## Pipeline Workflow
+
+The project is structured as an end-to-end pipeline that processes raw 3D image data to produce a final classification. The diagram below illustrates the major stages of this process.
+
+![Wound Border Characterization Pipeline](docs/source//process.png)
+*Figure 1: The complete pipeline, from initial data preprocessing and feature extraction to unsupervised clustering for label discovery and final supervised classification for prediction.*
+
+### A Note on Classification Labels
+Please note that the classification labels used to train the model (e.g., "Shallow Bed, Gentle Slope") are not clinically verified. They were generated in a data-driven manner from the unsupervised clustering step based on statistical similarities in the wound geometry.
+
+The primary goal of this project is to provide a robust framework for this type of analysis. Users can easily adapt the pipeline to use their own clinically verified labels by modifying the `DescriptiveLabels` section in the `config.json` file.
+
+## The Dataset
 The dataset for this study was provided by the IRCCS Sant' Orsola Malpighi University Hospital in Bologna. It originated from an initial pool of 7,329 mobile phone images and their corresponding 16-bit depth maps, which were captured during daily clinical routines. After a programmatic quality filtering process, a final set of 1,436 images was selected for the pipeline, from which **1,143** were successfully processed to generate the final feature set.
 
 **Important:** Due to patient privacy and confidentiality, the clinical dataset is private and is **not included** in this repository.
@@ -60,7 +144,7 @@ The pipeline is designed to work on custom datasets. To process your own images,
 
 These files must be placed in their corresponding subdirectories within the `/data` folder (`data/images`, `data/wound_masks`, etc.).
 
-## 🚀 Getting Started
+## Getting Started
 To get a local copy up and running, follow these simple steps.
 
 ### Prerequisites
@@ -69,8 +153,6 @@ Before you begin, ensure you have the following installed:
     * **Important:** During installation, make sure to check the box for **"Add Python 3.10 to PATH"**.
 
 * **Git**: For cloning the repository.
-
-* **Tkinter GUI Toolkit:** This project's interactive plotting mode requires the Tkinter library. On many systems, this is included with Python by default. If it is not, you may need to install it separately using your system's package manager (e.g., `sudo apt-get install python3-tk` on Debian/Ubuntu, or `brew install tcl-tk` on macOS).
 
 * **(Windows Only) C++ Build Tools**: Some of the project's dependencies need to be compiled from source.
     1.  Download the installer from [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/).
@@ -129,7 +211,7 @@ Before you begin, ensure you have the following installed:
 
 You are now ready to run the pipeline.
 
-## ▶️ Usage
+## Usage
 The entire pipeline is controlled via the main script **run_pipeline.py**. You must specify a **stage** to execute, which tells the script which part of the process to run.
 
 **Important Note:** This repository includes the original, pre-computed feature file (outputs/1_comprehensive_features.csv)that was used to generate the results for the original study. This allows you to immediately evaluate the core machine learning components (clustering and classification) without needing the private image dataset.
@@ -199,7 +281,7 @@ Run the feature extraction on your entire dataset.
 ```sh
 python run_pipeline.py extract
 ```
-You can also visualize the process for a single image to ensure it's working as expected on your data:
+You can run this step for a single image to see the outputs of each process while extracting the features from your wound image.
 ```sh
 python run_pipeline.py extract --image_id <your_image_id>
 ```
@@ -223,13 +305,19 @@ After this step, your new custom-trained model is saved to the **outputs/** dire
 #### Expected Results:
 **Step 1 (Extract):**
 * Console output showing progress of feature extraction process
-* Generated file: `1_comprehensive_features.csv` saved in `outputs/` directory
+* Generated files in 'outputs/' directory:
+    * 1_comprehensive_features.csv - Extracted feature set from your wound image(s)
+    
+    with the '--image_id' the following files also save in the 'outputs/' directory:
+    * {image_id}_initial_data.png - A grid plot showing the loaded RGB image, masks, and depth map.
+    * {image_id}_unrolled_strip.png - A visualization of the rectified (unrolled) RGB and Depth strips.
+    * {image_id}_depth_profile_with_fits.png - A plot showing the piecewise curve fits on the smoothed depth profile.
 
 **Steps 2, 3, and 4:**
 
 See the 'Expected Results' described in the `cluster` and `train` steps under **Use Case 2** above.
 
-## ✅ Tests
+## Tests
 This project is committed to code quality and reliability, backed by a comprehensive suite of unit tests. The tests verify all core functionalities, edge cases, and error-handling routines.
 
 ### Running the Test Suite
@@ -259,14 +347,14 @@ Certain files are intentionally excluded from the unit test coverage metrics, fo
 * src/logging_setup.py: This is a simple configuration script that is implicitly verified by the logging checks in all other tests.
 * run_pipeline.py: As the main application entry point, this script's end-to-end functionality is verified by running the workflows described in the Usage section.
 
-## 📖 Documentation
+## Documentation
 This project includes a complete documentation website that provides an in-depth overview of the project, its usage, and a detailed API reference for the entire codebase.
 
 The documentation is automatically generated from the source code's docstrings using Sphinx and is hosted on GitHub Pages.
 
-**[➡️ View the Full Documentation Here](https://mpsviraj.github.io/Wound-Border-Characterization/)**
+**[View the Full Documentation Here](https://mpsviraj.github.io/Wound-Border-Characterization/)**
 
-## ⚠️ Limitations
+## Limitations
 This project is a proof-of-concept framework and has the following known limitations:
 
 ### * Technical & Data Format Limitations
@@ -292,5 +380,13 @@ This project is a proof-of-concept framework and has the following known limitat
 ### Project Scope Limitations
 * **Demonstration Data:** The provided sample data is synthetic and is intended solely for demonstrating that the pipeline's code is functional. The machine learning results (clusters, model accuracy, etc.) generated from this sample data are not scientifically meaningful.
 
-## 📜 License
+## License
 Distributed under the MIT License. See [`LICENSE`](LICENSE) for more information.
+
+<p align=center>
+  <br />
+  <a href="https://github.com/MPSVIRAJ/Wound-Border-Characterization/issues">Report Bug</a>
+  ·
+  <a href="https://github.com/MPSVIRAJ/Wound-Border-Characterization/issues">Request Feature</a>
+</p>
+
