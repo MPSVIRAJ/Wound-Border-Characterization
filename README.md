@@ -2,8 +2,8 @@
 
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Python-3.10-blue?style=for-the-badge&logo=python" alt="Python 3.10">
-  <img src="https://img.shields.io/badge/Coverage-99%25-brightgreen?style=for-the-badge&logo=codecov" alt="Test Coverage">
+  <a href="https://www.python.org/downloads/release/python-31011/"><img src="https://img.shields.io/badge/Python-3.10-blue?style=for-the-badge&logo=python" alt="Python 3.10">
+  <a href="https://github.com/MPSVIRAJ/Wound-Border-Characterization"><img src="https://img.shields.io/badge/Coverage-99%25-brightgreen?style=for-the-badge&logo=codecov" alt="Test Coverage">
   <a href="https://mpsviraj.github.io/Wound-Border-Characterization/index.html"><img src="https://img.shields.io/badge/Documentation-View-blue?style=for-the-badge" alt="Documentation"></a>
   <a href="https://github.com/MPSVIRAJ/Wound-Border-Characterization/blob/main/License"><img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="License: MIT"></a>
 </p>
