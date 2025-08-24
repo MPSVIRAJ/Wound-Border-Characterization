@@ -2413,10 +2413,10 @@ requiring manual interaction.</p>
 </dl>
 <dl class="py function">
 <dt class="sig sig-object py" id="src.plotting.plot_initial_data">
-<span class="sig-prename descclassname"><span class="pre">src.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_initial_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wound_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">body_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth_map</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.plotting.plot_initial_data" title="Link to this definition">#</a></dt>
-<dd><p>Displays the raw RGB image, wound mask, body mask, and depth map in a grid.</p>
-<p>This is an inspection utility to visually validate that the initial data
-has been loaded correctly.</p>
+<span class="sig-prename descclassname"><span class="pre">src.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_initial_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wound_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">body_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth_map</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.plotting.plot_initial_data" title="Link to this definition">#</a></dt>
+<dd><p>Creates and saves a grid plot of the raw input data.</p>
+<p>This utility visualizes the initial data for a single sample, including the
+RGB image, wound mask, body mask, and depth map.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -2424,6 +2424,8 @@ has been loaded correctly.</p>
 <li><p><strong>wound_mask</strong> (<em>np.ndarray</em>) – The loaded wound mask.</p></li>
 <li><p><strong>body_mask</strong> (<em>np.ndarray</em>) – The loaded body mask.</p></li>
 <li><p><strong>depth_map</strong> (<em>np.ndarray</em>) – The loaded depth map.</p></li>
+<li><p><strong>save_path</strong> (<em>Optional</em><em>[</em><em>Path</em><em>]</em><em>, </em><em>optional</em>) – The full path to save the plot. If None, the plot is not saved.
+Defaults to None.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2444,7 +2446,7 @@ has been loaded correctly.</p>
 </dl>
 </li>
 <li><dl class="simple">
-<dt>Display:</dt><dd><p>A matplotlib window displaying the plots.</p>
+<dt>File:</dt><dd><p>A PNG file of the plot at <cite>save_path</cite>.</p>
 </dd>
 </dl>
 </li>
@@ -2465,11 +2467,10 @@ has been loaded correctly.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="src.plotting.show_unrolled_strip">
-<span class="sig-prename descclassname"><span class="pre">src.plotting.</span></span><span class="sig-name descname"><span class="pre">show_unrolled_strip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rect_depth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unrolled_image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iterations</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.plotting.show_unrolled_strip" title="Link to this definition">#</a></dt>
-<dd><p>Visualizes the rectified depth profile and corresponding RGB image.</p>
-<p>This function displays the unrolled depth strip and the corresponding RGB image
-in a side-by-side view. It highlights the wound border and the width of the
-unrolled strip.</p>
+<span class="sig-prename descclassname"><span class="pre">src.plotting.</span></span><span class="sig-name descname"><span class="pre">show_unrolled_strip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rect_depth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unrolled_image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iterations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.plotting.show_unrolled_strip" title="Link to this definition">#</a></dt>
+<dd><p>Creates and saves a plot of the rectified depth and RGB strips.</p>
+<p>This function visualizes the output of the periwound unrolling process,
+displaying the depth and RGB data in a standardized rectangular format.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -2478,6 +2479,8 @@ unrolled strip.</p>
 <li><p><strong>d1</strong> (<em>int</em>) – The position of the wound border in the depth profile.</p></li>
 <li><p><strong>p1</strong> (<em>int</em>) – The position of the wound border in the RGB image.</p></li>
 <li><p><strong>iterations</strong> (<em>int</em>) – The number of erosion/dilation steps.</p></li>
+<li><p><strong>save_path</strong> (<em>Optional</em><em>[</em><em>Path</em><em>]</em><em>, </em><em>optional</em>) – The full path to save the plot. If None, the plot is not saved.
+Defaults to None.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2495,7 +2498,7 @@ unrolled strip.</p>
 </dl>
 </li>
 <li><dl class="simple">
-<dt>Display:</dt><dd><p>A matplotlib window displaying the plots.</p>
+<dt>File:</dt><dd><p>A png file save in the given save_path.</p>
 </dd>
 </dl>
 </li>
@@ -2514,9 +2517,8 @@ unrolled strip.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="src.plotting.plot_depth_profile">
-<span class="sig-prename descclassname"><span class="pre">src.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_depth_profile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mean_profile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std_profile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.plotting.plot_depth_profile" title="Link to this definition">#</a></dt>
-<dd><p>Visualizes the raw mean depth profile with its standard deviation and the
-estimated wound border position.</p>
+<span class="sig-prename descclassname"><span class="pre">src.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_depth_profile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mean_profile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std_profile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.plotting.plot_depth_profile" title="Link to this definition">#</a></dt>
+<dd><p>Creates and saves a line plot of the raw mean depth profile.</p>
 <p>This function creates a line plot of the mean depth profile, and uses a shaded
 area to represent the standard deviation across the strip. It also adds a vertical
 line at the estimated wound border position (d1).</p>
@@ -2526,6 +2528,8 @@ line at the estimated wound border position (d1).</p>
 <li><p><strong>mean_profile</strong> (<em>np.ndarray</em>) – A 1D array of the mean depth profile.</p></li>
 <li><p><strong>std_profile</strong> (<em>np.ndarray</em>) – A 1D array of the standard deviation profile.</p></li>
 <li><p><strong>d1</strong> (<em>int</em>) – The index of the wound edge (the baseline contour).</p></li>
+<li><p><strong>save_path</strong> (<em>Optional</em><em>[</em><em>Path</em><em>]</em><em>, </em><em>optional</em>) – The full path to save the plot. If None, the plot is not saved.
+Defaults to None.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2546,7 +2550,7 @@ line at the estimated wound border position (d1).</p>
 </dl>
 </li>
 <li><dl class="simple">
-<dt>Display:</dt><dd><p>A matplotlib window displaying the plots.</p>
+<dt>File:</dt><dd><p>A PNG file of the plot at <cite>save_path</cite>.</p>
 </dd>
 </dl>
 </li>
@@ -2565,8 +2569,8 @@ line at the estimated wound border position (d1).</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="src.plotting.plot_profiles_and_fits">
-<span class="sig-prename descclassname"><span class="pre">src.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_profiles_and_fits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mean_profile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std_profile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smoothed_profile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transition_width</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.plotting.plot_profiles_and_fits" title="Link to this definition">#</a></dt>
-<dd><p>Plots the mean and std deviation profiles, the smoothed profile, and the curve fits.</p>
+<span class="sig-prename descclassname"><span class="pre">src.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_profiles_and_fits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mean_profile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std_profile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smoothed_profile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transition_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.plotting.plot_profiles_and_fits" title="Link to this definition">#</a></dt>
+<dd><p>Creates and saves a plot of the depth profile and its piecewise curve fits.</p>
 <p>This function visualizes the core output of the feature extraction module, showing
 how the linear and sigmoid functions fit the smoothed depth profile across the
 bed, edge, and skin regions.</p>
@@ -2580,6 +2584,8 @@ bed, edge, and skin regions.</p>
 <li><p><strong>d1</strong> (<em>int</em>) – The index of the wound edge (baseline contour).</p></li>
 <li><p><strong>p1</strong> (<em>int</em>) – A redundant parameter (likely from original code), but kept for consistency.</p></li>
 <li><p><strong>transition_width</strong> (<em>int</em>) – The width of the edge transition region.</p></li>
+<li><p><strong>save_path</strong> (<em>Optional</em><em>[</em><em>Path</em><em>]</em><em>, </em><em>optional</em>) – The full path to save the plot. If None, the plot is not saved.
+Defaults to None.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2600,7 +2606,7 @@ bed, edge, and skin regions.</p>
 </dl>
 </li>
 <li><dl class="simple">
-<dt>Display:</dt><dd><p>A matplotlib window displaying the plots.</p>
+<dt>File:</dt><dd><p>A PNG file of the plot at <cite>save_path</cite>.</p>
 </dd>
 </dl>
 </li>
