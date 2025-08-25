@@ -25,6 +25,7 @@
       </ul>
     </li>
     <li><a href="#pipeline-workflow">Pipeline Workflow</a></li>
+    <li><a href="#configuration">Configuration</a></li>
     <li>
       <a href="#the-dataset">The Dataset</a>
       <ul>
@@ -124,6 +125,9 @@ The project is structured as an end-to-end pipeline that processes raw 3D image 
 Please note that the classification labels used to train the model (e.g., "Shallow Bed, Gentle Slope") are not clinically verified. They were generated in a data-driven manner from the unsupervised clustering step based on statistical similarities in the wound geometry.
 
 The primary goal of this project is to provide a robust framework for this type of analysis. Users can easily adapt the pipeline to use their own clinically verified labels by modifying the `DescriptiveLabels` section in the `config.json` file.
+
+## Configuration
+The entire pipeline is controlled by the `config.json` file. This file contains all parameters for data paths, feature extraction settings, and machine learning models, allowing for easy modification of the pipeline's behavior without altering the source code.
 
 ## The Dataset
 The dataset for this study was provided by the IRCCS Sant' Orsola Malpighi University Hospital in Bologna. It originated from an initial pool of 7,329 mobile phone images and their corresponding 16-bit depth maps, which were captured during daily clinical routines. After a programmatic quality filtering process, a final set of 1,436 images was selected for the pipeline, from which **1,143** were successfully processed to generate the final feature set.
