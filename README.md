@@ -325,7 +325,12 @@ See the 'Expected Results' described in the `cluster` and `train` steps under **
 
 ## Tests
 This project is committed to code quality and reliability, backed by a comprehensive suite of unit tests. The tests verify all core functionalities, edge cases, and error-handling routines.
-
+### Setting Up a Development Environment
+To run the test suite, you must first install the development dependencies, which include **pytest** and **pytest-cov**. After creating and activating your virtual environment, install the project in editable mode with the **[dev]** extras:
+```sh
+pip install -e ".[dev]"
+```
+This command installs the core package and all the tools needed to run the tests.
 ### Running the Test Suite
 To run all tests, execute the following command from the project root directory:
 ```sh
@@ -333,7 +338,7 @@ pytest -v
 ```
 To generate a coverage report for the core application logic, run:
 ```sh
-pytest --cov
+python -m pytest --cov
 ```
 ### Testing Scope
 **What is Tested:**
