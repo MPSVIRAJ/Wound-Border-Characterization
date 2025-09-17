@@ -192,9 +192,11 @@ Before you begin, ensure you have the following installed:
     .\wbc_venv\Scripts\activate
     ```
 
-3.  **Install dependencies:**
+3.  **Install the package:**
+    
+    This single command will install the project and all its core dependencies in editable mode, which is ideal for development.
     ```sh
-    pip install -r requirements.txt
+    pip install -e .
     ```
 
 4. **Set up the sample data**
@@ -216,7 +218,7 @@ Before you begin, ensure you have the following installed:
 You are now ready to run the pipeline.
 
 ## Usage
-The entire pipeline is controlled via the main script **run_pipeline.py**. You must specify a **stage** to execute, which tells the script which part of the process to run.
+The entire pipeline is now controlled via the **wound-analyzer** command-line tool. You must specify a **stage** to execute, which tells the script which part of the process to run.
 
 **Important Note:** This repository includes the original, pre-computed feature file (outputs/1_comprehensive_features.csv)that was used to generate the results for the original study. This allows you to immediately evaluate the core machine learning components (clustering and classification) without needing the private image dataset.
 
@@ -228,7 +230,7 @@ If you have a new set of wound images (structured as described in "The Dataset" 
 This command will first run feature extraction on your data and then use the existing trained model to predict the wound border type.
 
 ```sh
-python run_pipeline.py predict
+wound-analyzer predict
 ```
 
 ### Expected Results:
@@ -241,7 +243,7 @@ If you wish to verify and reproduce the original clustering and model training p
 
 #### 1. Reproduce the clustering:
 ```sh
-python run_pipeline.py cluster
+wound-analyzer cluster
 ```
 #### Expected Results:
 
@@ -257,7 +259,7 @@ python run_pipeline.py cluster
 
 #### 2. Reproduce the model training:
 ```sh
-python run_pipeline.py train
+wound-analyzer train
 ```
 #### Expected Results:
 
@@ -283,16 +285,16 @@ If you have your own complete dataset and want to create a new model, you must r
 #### Step 1: Extract Features
 Run the feature extraction on your entire dataset.
 ```sh
-python run_pipeline.py extract
+wound-analyzer extract
 ```
 You can run this step for a single image to see the outputs of each process while extracting the features from your wound image.
 ```sh
-python run_pipeline.py extract --image_id <your_image_id>
+wound-analyzer extract --image_id <your_image_id>
 ```
 #### Step 2: Discover Clusters
 Run the clustering stage to discover the natural groupings in your data.
 ```sh
-python run_pipeline.py cluster
+wound-analyzer cluster
 ```
 #### Step 3: Interpret Clusters and Update Config (Manual Step)
 Stop here and inspect the output plots in the **outputs/** directory, especially samples_for_clusters.png. Create your own meaningful names for the new cluster labels that were discovered.
@@ -302,7 +304,7 @@ Then, open **config.json** and update the **DescriptiveLabels** section with you
 #### Step 4: Train the New Model
 Now, run the training stage. It will use your newly extracted features and your custom labels from the **config.json** to train a new classifier.
 ```sh
-python run_pipeline.py train
+wound-analyzer train
 ```
 After this step, your new custom-trained model is saved to the **outputs/** directory and is ready to be used for  predictions.
 
