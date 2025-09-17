@@ -28,6 +28,12 @@ dependencies = [
     "pillow==11.2.1",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest==8.4.1",
+    "pytest-cov",
+]
+
 [project.scripts]
 wound-analyzer = "wound_analyzer.run_pipeline:main"
 
