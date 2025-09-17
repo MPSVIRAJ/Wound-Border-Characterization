@@ -43,10 +43,6 @@ import argparse
 import shutil
 
 # --- Project Imports ---
-project_root = Path(__file__).resolve().parent
-if str(project_root) not in sys.path:
-    sys.path.append(str(project_root))
-
 from config_manager import Config
 from data_loader import data_loader, load_and_clean_features, load_cluster_groups
 from plotting import (
